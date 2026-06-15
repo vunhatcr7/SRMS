@@ -12,7 +12,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    // 🔥 THÊM DÒNG NÀY VÀO ĐỂ TẮT CẢNH BÁO CỦA TYPESCRIPT 6.0
+    "ignoreDeprecations": "6.0" 
   },
   "include": ["src/**/*"]
 }
