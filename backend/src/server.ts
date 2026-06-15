@@ -1,25 +1,26 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRoutes from '../src/routes/auth.route';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middlewares
+// 1. Cấu hình các Middleware xử lý dữ liệu đầu vào (Luôn ở trên cùng)
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // Khai báo phân tích dữ liệu dạng JSON
+app.use(express.urlencoded({ extended: true })); // Khai báo phân tích URL-encoded
 
-// Kiểm tra trạng thái hệ thống (Health Check)
+// 2. Định nghĩa các Router tính năng
+app.use('/api/v1/auth', authRoutes);
+
+// Tuyến đường kiểm tra nhanh hệ thống
 app.get('/api/v1/health', (req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'OK',
-    message: 'SRMS Backend API is running smoothly',
-    timestamp: new Date().toISOString()
-  });
+  res.status(200).json({ status: 'OK', message: 'Backend is running' });
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
 });
