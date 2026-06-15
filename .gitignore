@@ -1,0 +1,22 @@
+# Node modules (Thư viện tải về)
+node_modules/
+**/node_modules/
+
+# Build outputs (Sản phẩm sau khi compile)
+dist/
+build/
+**/dist/
+**/build/
+
+# Environment variables (Biến môi trường - BẢO MẬT)
+.env
+.env.local
+**/ .env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS operating system files
+.DS_Store
+Thumbs.db
