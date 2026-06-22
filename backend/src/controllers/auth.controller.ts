@@ -97,3 +97,21 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Có lỗi xảy ra từ phía Server', error: error.message });
   }
 };
+export const getMe = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Không tìm thấy thông tin xác thực' });
+      return;
+    }
+
+    // Tìm lại trong DB để lấy thông tin mới nhất (bỏ passwordHash đi cho bảo mật)
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, email: true, role: true }
+    });
+
+    res.status(200).json({ user });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};

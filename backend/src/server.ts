@@ -9,7 +9,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // 1. Cấu hình các Middleware xử lý dữ liệu đầu vào (Luôn ở trên cùng)
-app.use(cors());
+app.use(cors({
+  origin: '*', // Sau này deploy sẽ đổi thành link Frontend thật
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json()); // Khai báo phân tích dữ liệu dạng JSON
 app.use(express.urlencoded({ extended: true })); // Khai báo phân tích URL-encoded
 
