@@ -1,14 +1,15 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Cổng 6543 có đuôi ?pgbouncer=true
+  directUrl = env("DIRECT_URL") // Cổng 5432 để đục tường chạy trực tiếp
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
-// 1. Phân quyền người dùng trong hệ thống
-enum Role {
+// 1. Phân quyền người dùng trong hệ thống (Đổi tên thành UserRole để khớp code Auth)
+enum UserRole {
   ADMIN
   COMPANY_MANAGER
   RECRUITER
@@ -29,14 +30,24 @@ enum ProcessStage {
 
 // 3. Bảng quản lý tài khoản đăng nhập
 model User {
-  id               String            @id @default(uuid())
-  email            String            @unique
-  passwordHash     String
-  role             Role              @default(CANDIDATE)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(CANDIDATE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Thông tin cá nhân cơ bản (Dùng chung cho tất cả các vai trò tránh tạo quá nhiều bảng Profile lẻ)
+  fullName String?
+  phone    String?
+  avatar   String?
+
+  // Kết nối đến các vai trò đặc thù
   candidateProfile CandidateProfile?
   recruiterProfile RecruiterProfile?
+
+  // Danh sách các Job do User này đăng (Nếu là Admin/Recruiter/Manager)
+  postedJobs Job[]
 }
 
 // 4. Bảng thông tin công ty tuyển dụng
@@ -51,25 +62,21 @@ model Company {
   jobs              Job[]
 }
 
-// 5. Bảng hồ sơ riêng của Recruiter
+// 5. Bảng hồ sơ riêng của Recruiter/Manager để liên kết với Công ty
 model RecruiterProfile {
   id        String   @id @default(uuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   companyId String
-  company   Company  @relation(fields: [companyId], references: [id])
-  fullName  String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }
 
-// 6. Bảng hồ sơ ứng viên (Nơi lưu dữ liệu sau khi AI Parsing)
+// 6. Bảng hồ sơ ứng viên (Nơi lưu dữ liệu nâng cao + kết quả AI Parsing)
 model CandidateProfile {
   id           String        @id @default(uuid())
   userId       String        @unique
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName     String
-  phone        String?
-  avatar       String?
   skills       String[] // Mảng lưu danh sách kỹ năng trích xuất từ CV
   experience   Json? // Lưu cấu trúc mảng kinh nghiệm làm việc dạng JSON
   education    Json? // Lưu cấu trúc học vấn dạng JSON
@@ -80,15 +87,22 @@ model CandidateProfile {
 
 // 7. Bảng quản lý tin tuyển dụng (Job Description - JD)
 model Job {
-  id           String        @id @default(uuid())
-  companyId    String
-  company      Company       @relation(fields: [companyId], references: [id])
+  id        String  @id @default(uuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Thêm liên kết trực tiếp với người đăng tin để dễ quản lý phân quyền
+  recruiterId String
+  recruiter   User   @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+
   title        String
   description  String // Nội dung chi tiết công việc
   requirements String // Yêu cầu kỹ năng, kinh nghiệm từ doanh nghiệp
-  salaryRange  String?
+  salaryRange  String? // Ví dụ: "15M - 25M"
+  location     String // Địa điểm làm việc (Hà Nội, TP.HCM, Remote)
   isActive     Boolean       @default(true)
   createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   applications Application[]
 }
 
@@ -96,9 +110,9 @@ model Job {
 model Application {
   id               String           @id @default(uuid())
   jobId            String
-  job              Job              @relation(fields: [jobId], references: [id])
+  job              Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
   candidateId      String
-  candidateProfile CandidateProfile @relation(fields: [candidateId], references: [id])
+  candidateProfile CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   stage            ProcessStage     @default(APPLIED)
 
   // Các trường lưu kết quả chấm điểm từ AI Matching
@@ -112,18 +126,15 @@ model Application {
   interviews Interview[]
 }
 
-// 9. Bảng quản lý lịch phỏng vấn & AI Phân tích cuộc hội thoại
+// 9. Bảng quản lý lịch phỏng vấn (Đã tinh gọn, chỉ tập trung vào quản lý lịch trình)
 model Interview {
   id              String      @id @default(uuid())
   applicationId   String
   application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  scheduledAt     DateTime
-  interviewerName String
-
-  // Dữ liệu phục vụ AI Interview Analysis
-  transcript     String? // Nội dung text cuộc phỏng vấn (Interviewer gõ hoặc import)
-  sentimentScore Float? // Điểm thái độ/tâm lý ứng viên (Thang điểm 0-1)
-  summary        String? // AI tóm tắt ngắn gọn nhận xét cốt lõi
+  scheduledAt     DateTime // Thời gian diễn ra cuộc phỏng vấn
+  locationOrLink  String // Địa điểm phỏng vấn (Ví dụ: "Phòng họp 3" hoặc link Zoom/Meet)
+  interviewerName String // Tên người sẽ phụ trách phỏng vấn ứng viên
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

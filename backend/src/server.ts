@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from '../src/routes/auth.route';
-
+import jobRoutes from '../src/routes/job.route';
 dotenv.config();
 
 const app = express();
@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true })); // Khai báo phân tích URL-en
 
 // 2. Định nghĩa các Router tính năng
 app.use('/api/v1/auth', authRoutes);
-
+app.use('/api/v1/job', jobRoutes);
 // Tuyến đường kiểm tra nhanh hệ thống
 app.get('/api/v1/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'OK', message: 'Backend is running' });
