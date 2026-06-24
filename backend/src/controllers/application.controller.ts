@@ -65,3 +65,41 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Lỗi server khi nộp đơn ứng tuyển', error: err.message });
   }
 };
+// 🚀 API: Nhà tuyển dụng xem danh sách các đơn ứng tuyển nộp vào Job của mình
+export const getRecruiterApplications = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const recruiterId = (req as any).user?.id; // Lấy ID Recruiter từ token
+
+    if (!recruiterId) {
+      res.status(401).json({ message: 'Vui lòng đăng nhập!' });
+      return;
+    }
+
+    // Tìm tất cả đơn ứng tuyển thuộc về các Job do Recruiter này đăng
+    const applications = await prisma.application.findMany({
+      where: {
+        job: {
+          recruiterId: recruiterId // Lọc theo đúng ID người đăng tin
+        }
+      },
+      include: {
+        job: {
+          select: { title: true, location: true }
+        },
+        candidateProfile: {
+          include: {
+            user: {
+              select: { fullName: true, email: true, phone: true, avatar: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' } // Đơn mới nộp xếp lên đầu
+    });
+
+    res.status(200).json(applications);
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Lỗi server khi lấy danh sách đơn ứng tuyển', error: err.message });
+  }
+};
