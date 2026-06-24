@@ -3,6 +3,7 @@ import Login from '../src/pages/Auth/Login';
 import Register from '../src/pages/Auth/Register';
 import CreateJob from '../src/pages/Job/CreateJob';
 import JobList from '../src/pages/Job/JobList';
+import RecruiterDashboard from '../src/pages/Job/RecruiterDashboard';
 function App() {
   return (
     <BrowserRouter>
@@ -15,6 +16,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/job/create" element={<CreateJob />} />
         <Route path="/job/list" element={<JobList />} />
+        <Route path="/dashboard/recruiter" element={<RecruiterDashboard />} />
       </Routes>
     </BrowserRouter>
   );
