@@ -103,3 +103,39 @@ export const getRecruiterApplications = async (req: Request, res: Response): Pro
     res.status(500).json({ message: 'Lỗi server khi lấy danh sách đơn ứng tuyển', error: err.message });
   }
 };
+
+export const updateApplicationStage = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { applicationId, stage } = req.body;
+    const recruiterId = (req as any).user?.id;
+
+    if (!recruiterId) {
+      res.status(401).json({ message: 'Vui lòng đăng nhập!' });
+      return;
+    }
+
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { job: true }
+    });
+
+    if (!application) {
+      res.status(404).json({ message: 'Không tìm thấy đơn ứng tuyển này!' });
+      return;
+    }
+
+    if (application.job.recruiterId !== recruiterId) {
+      res.status(403).json({ message: 'Bạn không có quyền cập nhật!' });
+      return;
+    }
+
+    const updatedApplication = await prisma.application.update({
+      where: { id: applicationId },
+      data: { stage: stage }
+    });
+
+    res.status(200).json({ message: 'Thành công', application: updatedApplication });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
