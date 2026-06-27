@@ -182,14 +182,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
               >
                 {/* Avatar Tròn Gradient */}
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm border border-indigo-100 flex-shrink-0">
-                  {activeUser.fullName.charAt(0).toUpperCase()}
+                    {activeUser?.fullName ? activeUser.fullName.charAt(0).toUpperCase() : 'U'}
                 </div>
                 
                 {/* Tên & Quyền tài khoản */}
                 <div className="text-left hidden md:block">
-                  <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-slate-900 transition-colors">{activeUser.fullName}</p>
+                  <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-slate-900 transition-colors">{activeUser?.fullName}</p>
                   <span className="inline-block bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.2 rounded-md mt-0.5 uppercase tracking-wider scale-95 origin-left">
-                    {activeUser.role === 'RECRUITER' ? 'HR Manager' : activeUser.role}
+                    {activeUser?.role === 'RECRUITER' ? 'HR Manager' : activeUser?.role}
                   </span>
                 </div>
 
@@ -201,7 +201,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl py-1 z-40 origin-top-right transition-all animate-in fade-in slide-in-from-top-1">
                   <div className="px-4 py-2 border-b border-slate-50">
                     <p className="text-[10px] font-medium text-slate-400">Đăng nhập với</p>
-                    <p className="text-xs font-semibold text-slate-700 truncate mt-0.5">{activeUser.email}</p>
+                    <p className="text-xs font-semibold text-slate-700 truncate mt-0.5">{activeUser?.email}</p>
                   </div>
                   
                   {/* Option Xem hồ sơ */}
