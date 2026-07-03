@@ -7,9 +7,9 @@ const prisma = new PrismaClient();
 export const createJob = async (req: Request, res: Response): Promise<void> => {
   try {
     const { title, description, requirements, salaryRange, location, companyName } = req.body;
-    
+
     // Lấy thông tin User từ token (đã qua middleware auth)
-    const recruiterId = (req as any).user?.id; 
+    const recruiterId = (req as any).user?.id;
 
     if (!recruiterId) {
       res.status(401).json({ message: 'Không tìm thấy thông tin người đăng tin, vui lòng đăng nhập lại!' });

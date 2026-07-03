@@ -22,7 +22,7 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
     let candidateId = candidateProfile?.id;
     if (!candidateId) {
       const newProfile = await prisma.candidateProfile.create({
-        data: { 
+        data: {
           userId: userId,
           resumeUrl: resumeUrl // Lưu luôn link CV vào hồ sơ cá nhân
         }
@@ -65,6 +65,7 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Lỗi server khi nộp đơn ứng tuyển', error: err.message });
   }
 };
+
 // 🚀 API: Nhà tuyển dụng xem danh sách các đơn ứng tuyển nộp vào Job của mình
 export const getRecruiterApplications = async (req: Request, res: Response): Promise<void> => {
   try {
