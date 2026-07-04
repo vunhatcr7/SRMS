@@ -8,21 +8,22 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// 1. Phân quyền người dùng trong hệ thống (Đổi tên thành UserRole để khớp code Auth)
+// 1. Phân quyền người dùng trong hệ thống
+// Dùng các vai trò phù hợp với MVP tuyển dụng: Admin, Manager, Recruiter, Interviewer, Candidate
 enum UserRole {
   ADMIN
-  COMPANY_MANAGER
+  MANAGER
   RECRUITER
   INTERVIEWER
   CANDIDATE
 }
 
 // 2. Các trạng thái trong vòng đời tuyển dụng (Phục vụ Kanban Board)
+// MVP chỉ cần các stage cốt lõi để demo quy trình tuyển dụng
 enum ProcessStage {
   APPLIED
   SCREENING
   INTERVIEW
-  TECHNICAL_TEST
   OFFER
   HIRED
   REJECTED
@@ -42,11 +43,11 @@ model User {
   phone    String?
   avatar   String?
 
-  // Kết nối đến các vai trò đặc thù
+  // Kết nối đến hồ sơ ứng viên hoặc hồ sơ nhà tuyển dụng
   candidateProfile CandidateProfile?
   recruiterProfile RecruiterProfile?
 
-  // Danh sách các Job do User này đăng (Nếu là Admin/Recruiter/Manager)
+  // Danh sách job do user đăng
   postedJobs Job[]
 }
 
@@ -72,15 +73,15 @@ model RecruiterProfile {
   createdAt DateTime @default(now())
 }
 
-// 6. Bảng hồ sơ ứng viên (Nơi lưu dữ liệu nâng cao + kết quả AI Parsing)
+// 6. Bảng hồ sơ ứng viên (MVP: lưu dữ liệu cơ bản từ CV + kết quả match)
 model CandidateProfile {
   id           String        @id @default(uuid())
   userId       String        @unique
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skills       String[] // Mảng lưu danh sách kỹ năng trích xuất từ CV
-  experience   Json? // Lưu cấu trúc mảng kinh nghiệm làm việc dạng JSON
-  education    Json? // Lưu cấu trúc học vấn dạng JSON
-  resumeUrl    String? // Đường dẫn file CV gốc (PDF/Docx) lưu trên Cloud
+  skills       String[]      @default([])
+  experience   Json?
+  education    Json?
+  resumeUrl    String?
   createdAt    DateTime      @default(now())
   applications Application[]
 }
