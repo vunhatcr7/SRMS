@@ -57,7 +57,7 @@ const router = Router();
  *                       type: string
  *                     stage:
  *                       type: string
- *                       enum: ["APPLIED", "REVIEWING", "INTERVIEW", "OFFERED", "REJECTED"]
+ *                       enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
  *                     createdAt:
  *                       type: string
  *                       format: date-time
@@ -101,7 +101,7 @@ router.post('/apply', requireAuth, applyJob);
  *                     type: string
  *                   stage:
  *                     type: string
- *                     enum: ["APPLIED", "REVIEWING", "INTERVIEW", "OFFERED", "REJECTED"]
+ *                     enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -143,7 +143,7 @@ router.get('/recruiter', requireAuth, getRecruiterApplications);
  *     description: |
  *       Nhà tuyển dụng cập nhật trạng thái xử lý của một đơn ứng tuyển.
  *       Chỉ nhà tuyển dụng của tin tuyển dụng mới có thể cập nhật trạng thái.
- *       Các trạng thái có thể: APPLIED, REVIEWING, INTERVIEW, OFFERED, REJECTED
+ *       Các trạng thái có thể: APPLIED, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -161,7 +161,7 @@ router.get('/recruiter', requireAuth, getRecruiterApplications);
  *                 example: "app123def456"
  *               stage:
  *                 type: string
- *                 enum: ["APPLIED", "REVIEWING", "INTERVIEW", "OFFERED", "REJECTED"]
+ *                 enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
  *                 example: "INTERVIEW"
  *     responses:
  *       200:
