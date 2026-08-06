@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { applyJob, getRecruiterApplications, updateApplicationStage } from '../controllers/application.controller';
-import { requireAuth } from '../middlewares/auth.middleware';
+import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -70,7 +70,7 @@ const router = Router();
  *       500:
  *         description: Lỗi server
  */
-router.post('/apply', requireAuth, applyJob);
+router.post('/apply', requireAuth, rolesAllowed('CANDIDATE'), applyJob);
 
 /**
  * @swagger
@@ -131,7 +131,7 @@ router.post('/apply', requireAuth, applyJob);
  *       500:
  *         description: Lỗi server
  */
-router.get('/recruiter', requireAuth, getRecruiterApplications);
+router.get('/recruiter', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplications);
 
 /**
  * @swagger
@@ -192,6 +192,6 @@ router.get('/recruiter', requireAuth, getRecruiterApplications);
  *       500:
  *         description: Lỗi server
  */
-router.put('/update-stage', requireAuth, updateApplicationStage);
+router.put('/update-stage', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), updateApplicationStage);
 
 export default router;

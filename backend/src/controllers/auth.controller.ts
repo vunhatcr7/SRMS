@@ -1,117 +1,138 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import prisma from '../config/db';
-import { User } from '@prisma/client';
 import jwt from 'jsonwebtoken';
+import { UserRole } from '@prisma/client';
+import prisma from '../config/db';
+
+const selfRegisterRoles = ['CANDIDATE', 'RECRUITER'] as const;
+
+const isSelfRegisterRole = (role: unknown): role is (typeof selfRegisterRoles)[number] => {
+  return typeof role === 'string' && selfRegisterRoles.includes(role as (typeof selfRegisterRoles)[number]);
+};
+
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    // 🔥 CHỐT CHẶN BẢO VỆ: Nếu req.body rỗng, trả về lỗi 400 ngay lập tức thay vì làm sập server
-    if (!req.body || Object.keys(req.body).length === 0) {
-      res.status(400).json({ 
-        message: 'Server không tiếp nhận được dữ liệu (Body rỗng). Vui lòng cấu hình lại Postman!' 
-      });
+    const body = req.body ?? {};
+
+    if (Object.keys(body).length === 0) {
+      res.status(400).json({ message: 'Body khong duoc de trong.' });
       return;
     }
 
-    const { email, password } = req.body;
-    const role = req.body.role as User['role']; // 🔥 Ép kiểu role từ req.body
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const requestedRole = body.role ?? 'CANDIDATE';
 
-    if (!email || !password || !role) {
-       res.status(400).json({ message: 'Vui lòng nhập đầy đủ email, password và role' });
-       return;
+    if (!email || !password) {
+      res.status(400).json({ message: 'Vui long nhap day du email va password.' });
+      return;
     }
 
-    // --- Các logic giữ nguyên từ bước trước ---
+    if (password.length < 6) {
+      res.status(400).json({ message: 'Password phai co it nhat 6 ky tu.' });
+      return;
+    }
+
+    if (!isSelfRegisterRole(requestedRole)) {
+      res.status(400).json({ message: 'Role dang ky chi duoc la CANDIDATE hoac RECRUITER.' });
+      return;
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-       res.status(400).json({ message: 'Email này đã được sử dụng' });
-       return;
+      res.status(400).json({ message: 'Email nay da duoc su dung.' });
+      return;
     }
 
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
+    const role = requestedRole as UserRole;
 
     const newUser = await prisma.user.create({
       data: { email, passwordHash, role },
-      select: { id: true, email: true, role: true, createdAt: true }
+      select: { id: true, email: true, role: true, createdAt: true },
     });
 
-    res.status(201).json({ message: 'Đăng ký tài khoản thành công!', user: newUser });
-
-  } catch (error: any) {
-    console.error('Lỗi Register API:', error);
-    res.status(500).json({ message: 'Có lỗi xảy ra từ phía Server', error: error.message });
+    res.status(201).json({ message: 'Dang ky tai khoan thanh cong.', user: newUser });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Register API error:', err);
+    res.status(500).json({ message: 'Loi server khi dang ky tai khoan.', error: err.message });
   }
 };
+
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    // 1. Chốt chặn bảo vệ: Kiểm tra body rỗng
-    if (!req.body || Object.keys(req.body).length === 0) {
-      res.status(400).json({ message: 'Dữ liệu gửi lên không hợp lệ (Body rỗng)' });
+    const body = req.body ?? {};
+
+    if (Object.keys(body).length === 0) {
+      res.status(400).json({ message: 'Body khong duoc de trong.' });
       return;
     }
 
-    const { email, password } = req.body;
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
 
     if (!email || !password) {
-      res.status(400).json({ message: 'Vui lòng nhập đầy đủ email và mật khẩu' });
+      res.status(400).json({ message: 'Vui long nhap day du email va password.' });
       return;
     }
 
-    // 2. Tìm người dùng trong Database qua Email
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không chính xác' });
+      res.status(400).json({ message: 'Tai khoan hoac mat khau khong chinh xac.' });
       return;
     }
 
-    // 3. So sánh mật khẩu người dùng nhập với mật khẩu đã mã hóa trong DB
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không chính xác' });
+      res.status(400).json({ message: 'Tai khoan hoac mat khau khong chinh xac.' });
       return;
     }
 
-    // 4. Tạo mã JWT Token bảo mật (Hạn dùng 1 ngày)
     const secretKey = process.env.JWT_SECRET || 'srms_platform_secret_fallback_key';
-    
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       secretKey,
       { expiresIn: '1d' }
     );
 
-    // 5. Trả về token và thông tin cơ bản cho Frontend
     res.status(200).json({
-      message: 'Đăng nhập thành công! 🚀',
+      message: 'Dang nhap thanh cong.',
       token,
       user: {
         id: user.id,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
-
-  } catch (error: any) {
-    console.error('Lỗi Login API:', error);
-    res.status(500).json({ message: 'Có lỗi xảy ra từ phía Server', error: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Login API error:', err);
+    res.status(500).json({ message: 'Loi server khi dang nhap.', error: err.message });
   }
 };
+
 export const getMe = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) {
-      res.status(401).json({ message: 'Không tìm thấy thông tin xác thực' });
+      res.status(401).json({ message: 'Khong tim thay thong tin xac thuc.' });
       return;
     }
 
-    // Tìm lại trong DB để lấy thông tin mới nhất (bỏ passwordHash đi cho bảo mật)
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { id: true, email: true, role: true }
+      select: { id: true, email: true, role: true },
     });
 
+    if (!user) {
+      res.status(404).json({ message: 'Khong tim thay nguoi dung.' });
+      return;
+    }
+
     res.status(200).json({ user });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Loi server khi lay thong tin nguoi dung.', error: err.message });
   }
 };
