@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getCandidateProfileByUserId, getMyCandidateProfile, upsertMyCandidateProfile } from '../controllers/candidate.controller';
-import { requireAuth } from '../middlewares/auth.middleware';
+import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -19,7 +19,7 @@ const router = Router();
  *       404:
  *         description: Chưa có hồ sơ
  */
-router.get('/profile', requireAuth, getMyCandidateProfile);
+router.get('/profile', requireAuth, rolesAllowed('CANDIDATE'), getMyCandidateProfile);
 
 /**
  * @swagger
@@ -48,7 +48,7 @@ router.get('/profile', requireAuth, getMyCandidateProfile);
  *               resumeUrl:
  *                 type: string
  */
-router.put('/profile', requireAuth, upsertMyCandidateProfile);
+router.put('/profile', requireAuth, rolesAllowed('CANDIDATE'), upsertMyCandidateProfile);
 
 /**
  * @swagger

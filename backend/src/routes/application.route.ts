@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { applyJob, getRecruiterApplications, updateApplicationStage } from '../controllers/application.controller';
-import { requireAuth } from '../middlewares/auth.middleware';
+import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -57,7 +57,7 @@ const router = Router();
  *                       type: string
  *                     stage:
  *                       type: string
- *                       enum: ["APPLIED", "REVIEWING", "INTERVIEW", "OFFERED", "REJECTED"]
+ *                       enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
  *                     createdAt:
  *                       type: string
  *                       format: date-time
@@ -70,7 +70,7 @@ const router = Router();
  *       500:
  *         description: Lỗi server
  */
-router.post('/apply', requireAuth, applyJob);
+router.post('/apply', requireAuth, rolesAllowed('CANDIDATE'), applyJob);
 
 /**
  * @swagger
@@ -101,7 +101,7 @@ router.post('/apply', requireAuth, applyJob);
  *                     type: string
  *                   stage:
  *                     type: string
- *                     enum: ["APPLIED", "REVIEWING", "INTERVIEW", "OFFERED", "REJECTED"]
+ *                     enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -131,7 +131,7 @@ router.post('/apply', requireAuth, applyJob);
  *       500:
  *         description: Lỗi server
  */
-router.get('/recruiter', requireAuth, getRecruiterApplications);
+router.get('/recruiter', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplications);
 
 /**
  * @swagger
@@ -143,7 +143,7 @@ router.get('/recruiter', requireAuth, getRecruiterApplications);
  *     description: |
  *       Nhà tuyển dụng cập nhật trạng thái xử lý của một đơn ứng tuyển.
  *       Chỉ nhà tuyển dụng của tin tuyển dụng mới có thể cập nhật trạng thái.
- *       Các trạng thái có thể: APPLIED, REVIEWING, INTERVIEW, OFFERED, REJECTED
+ *       Các trạng thái có thể: APPLIED, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -161,7 +161,7 @@ router.get('/recruiter', requireAuth, getRecruiterApplications);
  *                 example: "app123def456"
  *               stage:
  *                 type: string
- *                 enum: ["APPLIED", "REVIEWING", "INTERVIEW", "OFFERED", "REJECTED"]
+ *                 enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
  *                 example: "INTERVIEW"
  *     responses:
  *       200:
@@ -192,6 +192,6 @@ router.get('/recruiter', requireAuth, getRecruiterApplications);
  *       500:
  *         description: Lỗi server
  */
-router.put('/update-stage', requireAuth, updateApplicationStage);
+router.put('/update-stage', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), updateApplicationStage);
 
 export default router;

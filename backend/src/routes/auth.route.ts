@@ -35,7 +35,7 @@ const router = Router();
  *                 example: "Password@123"
  *               role:
  *                 type: string
- *                 enum: ["CANDIDATE", "RECRUITER", "ADMIN"]
+ *                 enum: ["CANDIDATE", "RECRUITER"]
  *                 example: "CANDIDATE"
  *     responses:
  *       201:

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createJob, getAllJobs } from '../controllers/job.controller';
-import { requireAuth } from '../middlewares/auth.middleware';
+import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -79,7 +79,7 @@ const router = Router();
  *       500:
  *         description: Lỗi server
  */
-router.post('/create', requireAuth, createJob);
+router.post('/create', requireAuth, rolesAllowed('RECRUITER', 'ADMIN'), createJob);
 
 /**
  * @swagger
