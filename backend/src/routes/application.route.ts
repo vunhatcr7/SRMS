@@ -10,11 +10,8 @@ const router = Router();
  *   post:
  *     tags:
  *       - Application
- *     summary: Ứng viên nộp đơn ứng tuyển
- *     description: |
- *       Ứng viên nộp đơn ứng tuyển cho một tin tuyển dụng.
- *       Nếu ứng viên chưa có hồ sơ cá nhân (CandidateProfile), hệ thống tự động tạo mới.
- *       Một ứng viên chỉ nộp được 1 đơn cho mỗi tin tuyển dụng.
+ *     summary: Candidate applies to a job
+ *     description: Only CANDIDATE can apply. A candidate can apply to each job only once.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -25,50 +22,30 @@ const router = Router();
  *             type: object
  *             required:
  *               - jobId
- *               - resumeUrl
  *             properties:
  *               jobId:
  *                 type: string
- *                 example: "abc123def456"
+ *                 description: Job id copied from GET /api/v1/job or POST /api/v1/job/create
+ *                 example: "paste-job-id-here"
  *               resumeUrl:
  *                 type: string
- *                 example: "https://example.com/resume.pdf"
+ *                 example: "https://example.com/demo-cv.pdf"
  *               coverLetter:
  *                 type: string
- *                 example: "Tôi rất hứng thú với vị trí này..."
+ *                 example: "I have experience with React, TypeScript and REST APIs."
  *     responses:
  *       201:
- *         description: Nộp đơn ứng tuyển thành công!
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 application:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     jobId:
- *                       type: string
- *                     candidateId:
- *                       type: string
- *                     stage:
- *                       type: string
- *                       enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
- *                     createdAt:
- *                       type: string
- *                       format: date-time
+ *         description: Application created successfully
  *       400:
- *         description: Ứng viên đã nộp đơn cho công việc này rồi
+ *         description: Missing jobId or candidate already applied
  *       401:
- *         description: Không có token hoặc token không hợp lệ
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User is not CANDIDATE
  *       404:
- *         description: Công việc không tồn tại
+ *         description: Job not found
  *       500:
- *         description: Lỗi server
+ *         description: Server error
  */
 router.post('/apply', requireAuth, rolesAllowed('CANDIDATE'), applyJob);
 
@@ -78,16 +55,13 @@ router.post('/apply', requireAuth, rolesAllowed('CANDIDATE'), applyJob);
  *   get:
  *     tags:
  *       - Application
- *     summary: Nhà tuyển dụng xem danh sách đơn ứng tuyển
- *     description: |
- *       Lấy danh sách tất cả đơn ứng tuyển nộp vào các tin tuyển dụng của nhà tuyển dụng này.
- *       Danh sách bao gồm thông tin ứng viên, tin tuyển dụng, và trạng thái xử lý.
- *       Danh sách được sắp xếp theo đơn mới nộp lên đầu.
+ *     summary: Get applications for recruiter review
+ *     description: RECRUITER sees applications for owned jobs. ADMIN and MANAGER can see all applications.
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Danh sách đơn ứng tuyển
+ *         description: Application list with job, candidate profile, and matching scores
  *         content:
  *           application/json:
  *             schema:
@@ -102,34 +76,24 @@ router.post('/apply', requireAuth, rolesAllowed('CANDIDATE'), applyJob);
  *                   stage:
  *                     type: string
  *                     enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
- *                   createdAt:
+ *                   matchingScore:
+ *                     type: number
+ *                     example: 82
+ *                   skillScore:
+ *                     type: number
+ *                     example: 88
+ *                   experienceScore:
+ *                     type: number
+ *                     example: 75
+ *                   aiExplanation:
  *                     type: string
- *                     format: date-time
- *                   job:
- *                     type: object
- *                     properties:
- *                       title:
- *                         type: string
- *                       location:
- *                         type: string
- *                   candidateProfile:
- *                     type: object
- *                     properties:
- *                       user:
- *                         type: object
- *                         properties:
- *                           fullName:
- *                             type: string
- *                           email:
- *                             type: string
- *                           phone:
- *                             type: string
- *                           avatar:
- *                             type: string
+ *                     example: "Candidate has strong overlap with the job requirements."
  *       401:
- *         description: Không có token hoặc token không hợp lệ
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User is not RECRUITER, MANAGER, or ADMIN
  *       500:
- *         description: Lỗi server
+ *         description: Server error
  */
 router.get('/recruiter', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplications);
 
@@ -139,11 +103,8 @@ router.get('/recruiter', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMI
  *   put:
  *     tags:
  *       - Application
- *     summary: Cập nhật trạng thái xử lý đơn ứng tuyển
- *     description: |
- *       Nhà tuyển dụng cập nhật trạng thái xử lý của một đơn ứng tuyển.
- *       Chỉ nhà tuyển dụng của tin tuyển dụng mới có thể cập nhật trạng thái.
- *       Các trạng thái có thể: APPLIED, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED
+ *     summary: Update application stage
+ *     description: RECRUITER can update owned applications. ADMIN and MANAGER can update any application.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -158,39 +119,24 @@ router.get('/recruiter', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMI
  *             properties:
  *               applicationId:
  *                 type: string
- *                 example: "app123def456"
+ *                 example: "paste-application-id-here"
  *               stage:
  *                 type: string
  *                 enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
  *                 example: "INTERVIEW"
  *     responses:
  *       200:
- *         description: Cập nhật trạng thái thành công!
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 application:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     stage:
- *                       type: string
- *                     updatedAt:
- *                       type: string
- *                       format: date-time
+ *         description: Stage updated successfully
+ *       400:
+ *         description: Missing applicationId/stage or invalid stage
  *       401:
- *         description: Không có token hoặc token không hợp lệ
+ *         description: Missing or invalid token
  *       403:
- *         description: Bạn không có quyền cập nhật đơn này
+ *         description: User does not have permission to update this application
  *       404:
- *         description: Đơn ứng tuyển không tồn tại
+ *         description: Application not found
  *       500:
- *         description: Lỗi server
+ *         description: Server error
  */
 router.put('/update-stage', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), updateApplicationStage);
 

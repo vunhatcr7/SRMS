@@ -10,10 +10,8 @@ const router = Router();
  *   post:
  *     tags:
  *       - Job
- *     summary: Tạo tin tuyển dụng mới
- *     description: |
- *       Chỉ nhà tuyển dụng (RECRUITER) mới có thể tạo tin tuyển dụng.
- *       Nếu công ty chưa tồn tại trong hệ thống, hệ thống sẽ tự động tạo mới.
+ *     summary: Create a new job post
+ *     description: Only RECRUITER or ADMIN can create job posts.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -26,58 +24,36 @@ const router = Router();
  *               - title
  *               - description
  *               - requirements
- *               - salaryRange
  *               - location
  *               - companyName
  *             properties:
  *               title:
  *                 type: string
- *                 example: "Senior Developer"
+ *                 example: "Backend Developer Intern"
  *               description:
  *                 type: string
- *                 example: "Tìm kiếm lập trình viên có 5+ năm kinh nghiệm..."
+ *                 example: "Build REST APIs for the SRMS platform."
  *               requirements:
  *                 type: string
- *                 example: "JavaScript, TypeScript, React, Node.js"
+ *                 example: "Node.js, Express, Prisma, PostgreSQL"
  *               salaryRange:
  *                 type: string
- *                 example: "15,000 - 25,000 USD"
+ *                 example: "8M - 12M"
  *               location:
  *                 type: string
- *                 example: "Hanoi, Vietnam"
+ *                 example: "Ho Chi Minh City"
  *               companyName:
  *                 type: string
- *                 example: "Tech Company ABC"
+ *                 example: "FPT Software"
  *     responses:
  *       201:
- *         description: Tạo tin tuyển dụng thành công!
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 job:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     title:
- *                       type: string
- *                     description:
- *                       type: string
- *                     location:
- *                       type: string
- *                     salaryRange:
- *                       type: string
- *                     createdAt:
- *                       type: string
- *                       format: date-time
+ *         description: Job created successfully
  *       401:
- *         description: Không có token hoặc token không hợp lệ
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User is not RECRUITER or ADMIN
  *       500:
- *         description: Lỗi server
+ *         description: Server error
  */
 router.post('/create', requireAuth, rolesAllowed('RECRUITER', 'ADMIN'), createJob);
 
@@ -87,45 +63,13 @@ router.post('/create', requireAuth, rolesAllowed('RECRUITER', 'ADMIN'), createJo
  *   get:
  *     tags:
  *       - Job
- *     summary: Lấy danh sách tất cả tin tuyển dụng
- *     description: |
- *       Lấy danh sách các tin tuyển dụng đang hoạt động.
- *       Danh sách được sắp xếp theo tin mới nhất lên đầu.
- *       Không yêu cầu authentication.
+ *     summary: Get all job posts
+ *     description: Public endpoint. Returns job posts with company information.
  *     responses:
  *       200:
- *         description: Danh sách tin tuyển dụng
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   title:
- *                     type: string
- *                   description:
- *                     type: string
- *                   requirements:
- *                     type: string
- *                   salaryRange:
- *                     type: string
- *                   location:
- *                     type: string
- *                   createdAt:
- *                     type: string
- *                     format: date-time
- *                   company:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       name:
- *                         type: string
+ *         description: Job list
  *       500:
- *         description: Lỗi server
+ *         description: Server error
  */
 router.get('/', getAllJobs);
 
