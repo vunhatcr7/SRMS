@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { register, login, getMe } from '../controllers/auth.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
+
 const router = Router();
 
 /**
@@ -9,10 +10,8 @@ const router = Router();
  *   post:
  *     tags:
  *       - Authentication
- *     summary: Đăng ký tài khoản mới
- *     description: |
- *       Tạo tài khoản mới cho ứng viên hoặc nhà tuyển dụng.
- *       Mật khẩu được mã hóa bằng bcryptjs (salted hash).
+ *     summary: Register a new account
+ *     description: Public self-registration only allows CANDIDATE or RECRUITER roles.
  *     requestBody:
  *       required: true
  *       content:
@@ -22,7 +21,6 @@ const router = Router();
  *             required:
  *               - email
  *               - password
- *               - role
  *             properties:
  *               email:
  *                 type: string
@@ -32,46 +30,20 @@ const router = Router();
  *                 type: string
  *                 format: password
  *                 minLength: 6
- *                 example: "Password@123"
+ *                 example: "Password123@"
  *               role:
  *                 type: string
  *                 enum: ["CANDIDATE", "RECRUITER"]
+ *                 default: "CANDIDATE"
  *                 example: "CANDIDATE"
  *     responses:
  *       201:
- *         description: Đăng ký thành công!
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 user:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     email:
- *                       type: string
- *                     role:
- *                       type: string
- *                     createdAt:
- *                       type: string
- *                       format: date-time
+ *         description: Account registered successfully
  *       400:
- *         description: Lỗi validation - thiếu dữ liệu hoặc email đã tồn tại
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
+ *         description: Missing data, duplicate email, weak password, or invalid self-register role
  *       500:
- *         description: Lỗi server
+ *         description: Server error
  */
-// Định nghĩa API Đăng ký tài khoản
 router.post('/register', register);
 
 /**
@@ -80,10 +52,7 @@ router.post('/register', register);
  *   post:
  *     tags:
  *       - Authentication
- *     summary: Đăng nhập tài khoản
- *     description: |
- *       Xác thực email và mật khẩu, trả về JWT token có hạn dùng 1 ngày.
- *       Token dùng để authenticate các request tiếp theo (thêm vào header Authorization).
+ *     summary: Login and receive a JWT token
  *     requestBody:
  *       required: true
  *       content:
@@ -97,37 +66,18 @@ router.post('/register', register);
  *               email:
  *                 type: string
  *                 format: email
- *                 example: "candidate@example.com"
+ *                 example: "recruiter@fpt.com"
  *               password:
  *                 type: string
  *                 format: password
- *                 example: "Password@123"
+ *                 example: "Password123@"
  *     responses:
  *       200:
- *         description: Đăng nhập thành công!
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 token:
- *                   type: string
- *                   description: JWT token (sử dụng trong header Authorization)
- *                 user:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     email:
- *                       type: string
- *                     role:
- *                       type: string
+ *         description: Login successful. Copy token and use Authorize with Bearer TOKEN.
  *       400:
- *         description: Email hoặc mật khẩu không chính xác
+ *         description: Invalid email or password
  *       500:
- *         description: Lỗi server
+ *         description: Server error
  */
 router.post('/login', login);
 
@@ -137,36 +87,18 @@ router.post('/login', login);
  *   get:
  *     tags:
  *       - Authentication
- *     summary: Lấy thông tin người dùng hiện tại
- *     description: |
- *       Lấy thông tin profile của người dùng đang đăng nhập.
- *       Yêu cầu token JWT trong header Authorization.
+ *     summary: Get current logged-in user
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Thông tin người dùng
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                 email:
- *                   type: string
- *                 role:
- *                   type: string
- *                 fullName:
- *                   type: string
- *                 phone:
- *                   type: string
- *                 avatar:
- *                   type: string
+ *         description: Current user information
  *       401:
- *         description: Không có token hoặc token không hợp lệ
+ *         description: Missing or invalid token
+ *       404:
+ *         description: User not found
  *       500:
- *         description: Lỗi server
+ *         description: Server error
  */
 router.get('/me', requireAuth, getMe);
 
@@ -176,34 +108,22 @@ router.get('/me', requireAuth, getMe);
  *   get:
  *     tags:
  *       - Authentication
- *     summary: Kiểm tra quyền ADMIN
- *     description: |
- *       Endpoint này chỉ dành cho ADMIN. Nếu token của bạn không phải ADMIN sẽ trả về lỗi 403.
+ *     summary: Test ADMIN-only permission
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Bạn là ADMIN, đã truy cập thành công!
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 adminInfo:
- *                   type: object
+ *         description: ADMIN token accepted
  *       401:
- *         description: Không có token hoặc token không hợp lệ
+ *         description: Missing or invalid token
  *       403:
- *         description: Bạn không phải ADMIN, không có quyền truy cập
- *       500:
- *         description: Lỗi server
+ *         description: User is not ADMIN
  */
 router.get('/admin-only', requireAuth, rolesAllowed('ADMIN'), (req, res) => {
   res.status(200).json({
-    message: ' đã vào được khu vực bảo mật tối cao của ADMIN ',
-    adminInfo: req.user
+    message: 'Admin access granted.',
+    adminInfo: req.user,
   });
 });
+
 export default router;

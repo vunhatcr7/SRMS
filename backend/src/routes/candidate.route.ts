@@ -10,14 +10,21 @@ const router = Router();
  *   get:
  *     tags:
  *       - Candidate
- *     summary: Xem hồ sơ ứng viên của chính mình
+ *     summary: Get my candidate profile
+ *     description: Only CANDIDATE can view their own candidate profile through this endpoint.
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Hồ sơ ứng viên
+ *         description: Candidate profile
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User is not CANDIDATE
  *       404:
- *         description: Chưa có hồ sơ
+ *         description: Candidate profile not found
+ *       500:
+ *         description: Server error
  */
 router.get('/profile', requireAuth, rolesAllowed('CANDIDATE'), getMyCandidateProfile);
 
@@ -27,7 +34,8 @@ router.get('/profile', requireAuth, rolesAllowed('CANDIDATE'), getMyCandidatePro
  *   put:
  *     tags:
  *       - Candidate
- *     summary: Tạo hoặc cập nhật hồ sơ ứng viên
+ *     summary: Create or update my candidate profile
+ *     description: Only CANDIDATE can create or update their own profile.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -38,15 +46,36 @@ router.get('/profile', requireAuth, rolesAllowed('CANDIDATE'), getMyCandidatePro
  *             type: object
  *             properties:
  *               skills:
- *                 type: array
- *                 items:
- *                   type: string
+ *                 oneOf:
+ *                   - type: array
+ *                     items:
+ *                       type: string
+ *                   - type: string
+ *                 example: ["React", "TypeScript", "Node.js"]
  *               experience:
  *                 type: object
+ *                 example:
+ *                   years: 2
+ *                   position: "Frontend Developer"
  *               education:
  *                 type: object
+ *                 example:
+ *                   school: "Demo University"
+ *                   major: "Software Engineering"
  *               resumeUrl:
  *                 type: string
+ *                 example: "https://example.com/resume.pdf"
+ *     responses:
+ *       200:
+ *         description: Candidate profile updated
+ *       201:
+ *         description: Candidate profile created
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User is not CANDIDATE
+ *       500:
+ *         description: Server error
  */
 router.put('/profile', requireAuth, rolesAllowed('CANDIDATE'), upsertMyCandidateProfile);
 
@@ -56,9 +85,28 @@ router.put('/profile', requireAuth, rolesAllowed('CANDIDATE'), upsertMyCandidate
  *   get:
  *     tags:
  *       - Candidate
- *     summary: Xem hồ sơ ứng viên theo userId
+ *     summary: Get candidate profile by user id
+ *     description: The owner can view their own profile. ADMIN, MANAGER, and RECRUITER can view candidate profiles.
  *     security:
  *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: "paste-candidate-user-id-here"
+ *     responses:
+ *       200:
+ *         description: Candidate profile
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User does not have permission to view this profile
+ *       404:
+ *         description: Candidate profile not found
+ *       500:
+ *         description: Server error
  */
 router.get('/profile/:userId', requireAuth, getCandidateProfileByUserId);
 
