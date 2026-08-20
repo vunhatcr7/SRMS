@@ -1,18 +1,34 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 // 🚀 API: Tạo tin tuyển dụng mới
 export const createJob = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { title, description, requirements, salaryRange, location, companyName } = req.body;
+    const body = req.body ?? {};
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    const description = typeof body.description === 'string' ? body.description.trim() : '';
+    const requirements = typeof body.requirements === 'string' ? body.requirements.trim() : '';
+    const salaryRange = typeof body.salaryRange === 'string' ? body.salaryRange.trim() : undefined;
+    const location = typeof body.location === 'string' ? body.location.trim() : '';
+    const companyName = typeof body.companyName === 'string' ? body.companyName.trim() : '';
 
     // Lấy thông tin User từ token (đã qua middleware auth)
     const recruiterId = (req as any).user?.id;
 
     if (!recruiterId) {
       res.status(401).json({ message: 'Không tìm thấy thông tin người đăng tin, vui lòng đăng nhập lại!' });
+      return;
+    }
+
+    if (!title || !description || !requirements || !location || !companyName) {
+      res.status(400).json({
+        message: 'Vui lòng nhập title, description, requirements, location và companyName.',
+      });
+      return;
+    }
+
+    if ([title, description, requirements, location, companyName].some((value) => value.length > 5000)) {
+      res.status(400).json({ message: 'Nội dung tin tuyển dụng vượt quá độ dài cho phép.' });
       return;
     }
 

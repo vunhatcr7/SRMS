@@ -19,6 +19,8 @@ const normalizeSkills = (value: unknown): string[] => {
   return [];
 };
 
+const isHttpUrl = (value: string): boolean => /^https?:\/\/\S+$/i.test(value);
+
 export const getMyCandidateProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user?.id;
@@ -63,7 +65,8 @@ export const upsertMyCandidateProfile = async (req: Request, res: Response): Pro
       return;
     }
 
-    const { skills, experience, education, resumeUrl } = req.body as {
+    const body = req.body ?? {};
+    const { skills, experience, education, resumeUrl } = body as {
       skills?: unknown;
       experience?: unknown;
       education?: unknown;
@@ -71,6 +74,15 @@ export const upsertMyCandidateProfile = async (req: Request, res: Response): Pro
     };
 
     const normalizedSkills = normalizeSkills(skills);
+    if (normalizedSkills.length > 50 || normalizedSkills.some((skill) => skill.length > 100)) {
+      res.status(400).json({ message: 'Danh sach ky nang khong hop le.' });
+      return;
+    }
+
+    if (resumeUrl !== undefined && (typeof resumeUrl !== 'string' || !isHttpUrl(resumeUrl.trim()))) {
+      res.status(400).json({ message: 'resumeUrl phai la mot URL http(s) hop le.' });
+      return;
+    }
     const existingProfile = await prisma.candidateProfile.findUnique({ where: { userId } });
     const safeExperience = experience === undefined || experience === null ? undefined : (experience as any);
     const safeEducation = education === undefined || education === null ? undefined : (education as any);
