@@ -30,7 +30,7 @@ export const createInterview = async (req: Request, res: Response): Promise<void
     const userRole = (req as any).user?.role;
     const { applicationId, scheduledAt, locationOrLink, interviewerName } = req.body ?? {};
     const safeApplicationId = typeof applicationId === 'string'
-      ? applicationId
+      ? applicationId.trim()
       : Array.isArray(applicationId)
         ? applicationId[0]
         : '';
@@ -40,7 +40,10 @@ export const createInterview = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    if (!safeApplicationId || !scheduledAt || !locationOrLink || !interviewerName) {
+    const safeLocationOrLink = typeof locationOrLink === 'string' ? locationOrLink.trim() : '';
+    const safeInterviewerName = typeof interviewerName === 'string' ? interviewerName.trim() : '';
+
+    if (!safeApplicationId || !scheduledAt || !safeLocationOrLink || !safeInterviewerName) {
       res.status(400).json({
         message: 'Thieu thong tin lich phong van. Can co: applicationId, scheduledAt, locationOrLink, interviewerName.',
       });
@@ -68,8 +71,8 @@ export const createInterview = async (req: Request, res: Response): Promise<void
       data: {
         applicationId: safeApplicationId,
         scheduledAt: scheduledDate,
-        locationOrLink,
-        interviewerName,
+        locationOrLink: safeLocationOrLink,
+        interviewerName: safeInterviewerName,
       },
     });
 
@@ -156,6 +159,16 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
     const scheduledDate = scheduledAt ? new Date(scheduledAt) : undefined;
     if (scheduledDate && Number.isNaN(scheduledDate.getTime())) {
       res.status(400).json({ message: 'Thoi gian phong van khong hop le.' });
+      return;
+    }
+
+    if (locationOrLink !== undefined && (typeof locationOrLink !== 'string' || !locationOrLink.trim())) {
+      res.status(400).json({ message: 'locationOrLink khong hop le.' });
+      return;
+    }
+
+    if (interviewerName !== undefined && (typeof interviewerName !== 'string' || !interviewerName.trim())) {
+      res.status(400).json({ message: 'interviewerName khong hop le.' });
       return;
     }
 

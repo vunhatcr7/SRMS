@@ -3,13 +3,14 @@ import { ProcessStage } from '@prisma/client';
 import prisma from '../config/db';
 
 const validStages = Object.values(ProcessStage);
+const isHttpUrl = (value: string): boolean => /^https?:\/\/\S+$/i.test(value);
 
 export const applyJob = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user?.id;
     const body = req.body ?? {};
-    const jobId = typeof body.jobId === 'string' ? body.jobId : '';
-    const resumeUrl = typeof body.resumeUrl === 'string' ? body.resumeUrl : undefined;
+    const jobId = typeof body.jobId === 'string' ? body.jobId.trim() : '';
+    const resumeUrl = typeof body.resumeUrl === 'string' ? body.resumeUrl.trim() : undefined;
 
     if (!userId) {
       res.status(401).json({ message: 'Vui long dang nhap bang tai khoan ung vien.' });
@@ -24,6 +25,16 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
     const jobExists = await prisma.job.findUnique({ where: { id: jobId } });
     if (!jobExists) {
       res.status(404).json({ message: 'Cong viec khong ton tai hoac da bi xoa.' });
+      return;
+    }
+
+    if (!jobExists.isActive) {
+      res.status(400).json({ message: 'Cong viec nay da dong nhan ho so.' });
+      return;
+    }
+
+    if (resumeUrl && !isHttpUrl(resumeUrl)) {
+      res.status(400).json({ message: 'resumeUrl phai la mot URL http(s) hop le.' });
       return;
     }
 
@@ -112,7 +123,7 @@ export const updateApplicationStage = async (req: Request, res: Response): Promi
   try {
     const body = req.body ?? {};
     const applicationId = typeof body.applicationId === 'string' ? body.applicationId : '';
-    const stage = typeof body.stage === 'string' ? body.stage : '';
+    const stage = typeof body.stage === 'string' ? body.stage.trim() : '';
     const requesterId = (req as any).user?.id;
     const requesterRole = (req as any).user?.role;
 

@@ -5,6 +5,7 @@ import { UserRole } from '@prisma/client';
 import prisma from '../config/db';
 
 const selfRegisterRoles = ['CANDIDATE', 'RECRUITER'] as const;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const isSelfRegisterRole = (role: unknown): role is (typeof selfRegisterRoles)[number] => {
   return typeof role === 'string' && selfRegisterRoles.includes(role as (typeof selfRegisterRoles)[number]);
@@ -28,8 +29,18 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    if (!emailPattern.test(email) || email.length > 254) {
+      res.status(400).json({ message: 'Email khong hop le.' });
+      return;
+    }
+
     if (password.length < 6) {
       res.status(400).json({ message: 'Password phai co it nhat 6 ky tu.' });
+      return;
+    }
+
+    if (password.length > 128) {
+      res.status(400).json({ message: 'Password khong duoc vuot qua 128 ky tu.' });
       return;
     }
 
@@ -75,6 +86,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     if (!email || !password) {
       res.status(400).json({ message: 'Vui long nhap day du email va password.' });
+      return;
+    }
+
+    if (!emailPattern.test(email) || email.length > 254) {
+      res.status(400).json({ message: 'Email khong hop le.' });
       return;
     }
 
