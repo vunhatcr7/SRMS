@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ProcessStage } from '@prisma/client';
 import prisma from '../config/db';
+import { calculateMatching } from '../services/matching.service';
 
 const validStages = Object.values(ProcessStage);
 const isHttpUrl = (value: string): boolean => /^https?:\/\/\S+$/i.test(value);
@@ -68,6 +69,11 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
         jobId,
         candidateId: candidateProfile.id,
         stage: ProcessStage.APPLIED,
+        ...calculateMatching(
+          candidateProfile.skills,
+          candidateProfile.experience,
+          jobExists.requirements,
+        ),
       },
     });
 
