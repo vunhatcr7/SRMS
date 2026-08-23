@@ -29,40 +29,42 @@ export default function Register() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3f4f6', fontFamily: 'sans-serif' }}>
-      <div style={{ backgroundColor: '#ffffff', padding: '2.5rem', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px' }}>
+    <div className="auth-page">
+      <div className="auth-panel">
         <form onSubmit={handleRegister}>
-          <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#1f2937' }}>ĐĂNG KÝ TÀI KHOẢN</h2>
+          <p className="auth-kicker">Get started</p>
+          <h2 className="auth-title">Tạo tài khoản</h2>
+          <p className="auth-subtitle">Tham gia hệ thống quản lý tuyển dụng SRMS.</p>
           
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#4b5563', fontSize: '14px' }}>Email Address</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="example@gmail.com" style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+          <div className="form-field">
+            <label htmlFor="register-email">Email</label>
+            <input id="register-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="example@gmail.com" />
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#4b5563', fontSize: '14px' }}>Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+          <div className="form-field">
+            <label htmlFor="register-password">Mật khẩu</label>
+            <input id="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Tối thiểu 6 ký tự" />
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#4b5563', fontSize: '14px' }}>Bạn là:</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #d1d5db', backgroundColor: '#fff' }}>
+          <div className="form-field">
+            <label htmlFor="register-role">Vai trò</label>
+            <select id="register-role" value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="CANDIDATE">Ứng viên (Candidate)</option>
               <option value="RECRUITER">Nhà tuyển dụng (Recruiter)</option>
             </select>
           </div>
 
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '0.75rem', backgroundColor: loading ? '#9ca3af' : '#10b981', color: '#ffffff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+          <button type="submit" disabled={loading} className="primary-button">
             {loading ? 'Đang xử lý...' : 'ĐĂNG KÝ'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '14px', color: '#4b5563' }}>
-          Đã có tài khoản? <span onClick={() => navigate('/login')} style={{ color: '#2563eb', cursor: 'pointer', fontWeight: 'bold' }}>Đăng nhập ngay</span>
+        <p className="auth-footer">
+          Đã có tài khoản? <button type="button" onClick={() => navigate('/login')}>Đăng nhập ngay</button>
         </p>
 
         {message && (
-          <div style={{ marginTop: '1rem', padding: '0.75rem', borderRadius: '4px', textAlign: 'center', fontSize: '14px', backgroundColor: message.includes('thành công') ? '#d1fae5' : '#fee2e2', color: message.includes('thành công') ? '#065f46' : '#991b1b' }}>
+          <div className={`form-message ${message.includes('thành công') ? 'success' : 'error'}`}>
             {message}
           </div>
         )}
