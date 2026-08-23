@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/db';
 import { extractResumeText } from '../services/resume-parser.service';
+import { parseResumeWithAI } from '../services/resume-ai.service';
 
 const normalizeSkills = (value: unknown): string[] => {
   if (Array.isArray(value)) {
@@ -161,6 +162,43 @@ export const uploadResume = async (req: Request, res: Response): Promise<void> =
   } catch (error: unknown) {
     const err = error as Error;
     res.status(400).json({ message: `Không thể đọc CV: ${err.message}` });
+  }
+};
+
+export const parseResume = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      res.status(401).json({ message: 'Vui lòng đăng nhập để phân tích CV.' });
+      return;
+    }
+
+    const profile = await prisma.candidateProfile.findUnique({ where: { userId } });
+    if (!profile?.resumeText?.trim()) {
+      res.status(400).json({ message: 'Hãy tải CV trước khi yêu cầu phân tích.' });
+      return;
+    }
+
+    const parsedResume = await parseResumeWithAI(profile.resumeText);
+    const updatedProfile = await prisma.candidateProfile.update({
+      where: { userId },
+      data: {
+        skills: parsedResume.skills,
+        experience: {
+          years: parsedResume.experienceYears,
+          position: parsedResume.position,
+          summary: parsedResume.summary,
+        },
+        education: parsedResume.education ? { summary: parsedResume.education } : undefined,
+      },
+      select: { id: true, userId: true, skills: true, experience: true, education: true, resumeUrl: true },
+    });
+
+    res.status(200).json({ message: 'Phân tích CV thành công.', parsedResume, profile: updatedProfile });
+  } catch (error: unknown) {
+    const err = error as Error;
+    const status = err.message.includes('AI_API_KEY') ? 503 : 502;
+    res.status(status).json({ message: `Không thể phân tích CV: ${err.message}` });
   }
 };
 
