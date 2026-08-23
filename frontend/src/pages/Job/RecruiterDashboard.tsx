@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
+import api from '../../api/axios';
 
 interface Application {
   id: string;
   stage: string;
   createdAt: string;
+  matchingScore: number;
+  skillScore: number;
+  experienceScore: number;
   job: {
     title: string;
     location: string;
@@ -23,7 +27,6 @@ const STAGES = [
   { value: 'APPLIED', label: '📥 Đã nộp đơn' },
   { value: 'SCREENING', label: '🔍 Lọc hồ sơ' },
   { value: 'INTERVIEW', label: '📅 Phỏng vấn' },
-  { value: 'TECHNICAL_TEST', label: '💻 Bài test' },
   { value: 'OFFER', label: '🎉 Gửi Offer' },
   { value: 'HIRED', label: '✅ Đã tuyển' },
   { value: 'REJECTED', label: '❌ Từ chối' },
@@ -35,15 +38,11 @@ export default function RecruiterDashboard() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
 const fetchApplications = () => {
-    const token = localStorage.getItem('srms_token');
-    fetch('http://localhost:5000/api/v1/application/recruiter', {
-      headers: {
-        'Authorization': token?.startsWith('Bearer ') ? token : `Bearer ${token}`
-      }
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setApplications(data);
+    api.get('/application/recruiter')
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setApplications([...response.data].sort((left, right) => right.matchingScore - left.matchingScore));
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -60,25 +59,16 @@ const fetchApplications = () => {
   const handleStageChange = async (applicationId: string, newStage: string) => {
     setUpdatingId(applicationId);
     try {
-      const token = localStorage.getItem('srms_token');
-      const response = await fetch('http://localhost:5000/api/v1/application/update-stage', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token?.startsWith('Bearer ') ? token : `Bearer ${token}`
-        },
-        body: JSON.stringify({ applicationId, stage: newStage })
-      });
+      const response = await api.put('/application/update-stage', { applicationId, stage: newStage });
 
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         // Cập nhật lại state cục bộ ngay lập tức để giao diện thay đổi theo mà không cần load lại trang
         setApplications((prev) =>
           prev.map((app) => (app.id === applicationId ? { ...app, stage: newStage } : app))
         );
         alert('🎉 Cập nhật trạng thái hồ sơ thành công!');
       } else {
-        const data = await response.json();
-        alert(`❌ Thất bại: ${data.message}`);
+        alert(`❌ Thất bại: ${response.data?.message || 'Không thể cập nhật trạng thái.'}`);
       }
     } catch (error) {
       console.error('Lỗi khi cập nhật trạng thái hồ sơ:', error);
@@ -122,6 +112,7 @@ const fetchApplications = () => {
                 <th className="p-4">Ứng viên</th>
                 <th className="p-4">Vị trí ứng tuyển</th>
                 <th className="p-4">Ngày nộp</th>
+                <th className="p-4">AI Score</th>
                 <th className="p-4">Trạng thái xử lý</th>
                 <th className="p-4 text-right">Hành động</th>
               </tr>
@@ -140,6 +131,10 @@ const fetchApplications = () => {
                   </td>
                   <td className="p-4 text-gray-500">
                     {new Date(app.createdAt).toLocaleDateString('vi-VN')}
+                  </td>
+                  <td className="p-4">
+                    <span className="font-black text-indigo-600">{app.matchingScore ?? 0}%</span>
+                    <span className="block text-[11px] text-gray-400">Kỹ năng {app.skillScore ?? 0}%</span>
                   </td>
                   <td className="p-4">
                     {/* 🔴 DROPDOWN CHUYỂN TRẠNG THÁI */}

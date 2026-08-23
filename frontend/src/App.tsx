@@ -5,6 +5,7 @@ import CreateJob from '../src/pages/Job/CreateJob';
 import JobList from '../src/pages/Job/JobList';
 import RecruiterDashboard from '../src/pages/Job/RecruiterDashboard';
 import MainLayout from '../src/components/Layouts/MainLayout'; 
+import AIMatching from '../src/pages/Candidate/AIMatching';
 
 function App() {
   return (
@@ -43,6 +44,15 @@ function App() {
               <RecruiterDashboard />
             </MainLayout>
           } 
+        />
+
+        <Route
+          path="/candidate/ai"
+          element={
+            <MainLayout>
+              <AIMatching />
+            </MainLayout>
+          }
         />
       </Routes>
     </BrowserRouter>

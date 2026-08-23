@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import api from '../../api/axios';
 
 interface Company {
   name: string;
@@ -28,10 +29,9 @@ export default function AppJobList() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/v1/job')
-      .then((res) => res.json())
-      .then((data) => {
-        setJobs(data);
+    api.get('/job')
+      .then((response) => {
+        setJobs(response.data);
         setLoading(false);
       })
       .catch((err) => {
@@ -58,31 +58,19 @@ export default function AppJobList() {
     setSubmitMessage('');
 
     try {
-      const token = localStorage.getItem('srms_token'); // Lấy token đăng nhập của ứng viên
-      console.log('Token đăng nhập:', token); // Debug: In ra token để kiểm tra
-      const response = await fetch('http://localhost:5000/api/v1/application/apply', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token?.startsWith('Bearer ') ? token : `Bearer ${token}`
-        },
-        body: JSON.stringify({
+      const response = await api.post('/application/apply', {
           jobId: selectedJob.id,
           resumeUrl,
           coverLetter
-        })
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         setSubmitMessage('🎉 Nộp đơn ứng tuyển thành công! Chúc bạn may mắn.');
         // Tự động đóng modal sau 2 giây để trải nghiệm mượt mà hơn
         setTimeout(() => {
           setIsModalOpen(false);
         }, 2000);
       } else {
-        setSubmitMessage(`❌ Lỗi: ${data.message}`);
+        setSubmitMessage(`❌ Lỗi: ${response.data?.message || 'Không thể nộp đơn.'}`);
       }
     } catch (error) {
     console.error('Lỗi khi nộp đơn ứng tuyển:', error);
