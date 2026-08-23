@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/db';
+import { calculateMatching } from '../services/matching.service';
 
 // 🚀 API: Tạo tin tuyển dụng mới
 export const createJob = async (req: Request, res: Response): Promise<void> => {
@@ -79,5 +80,48 @@ export const getAllJobs = async (req: Request, res: Response): Promise<void> => 
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: 'Lỗi server khi lấy danh sách job', error: err.message });
+  }
+};
+
+export const getRecommendedJobs = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+    const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
+    const parsedLimit = rawLimit ? Number(rawLimit) : 10;
+    const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 && parsedLimit <= 50 ? parsedLimit : 10;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Vui long dang nhap de xem viec lam phu hop.' });
+      return;
+    }
+
+    const candidateProfile = await prisma.candidateProfile.findUnique({ where: { userId } });
+    if (!candidateProfile) {
+      res.status(404).json({ message: 'Hay tao ho so ung vien truoc khi xem goi y viec lam.' });
+      return;
+    }
+
+    const jobs = await prisma.job.findMany({
+      where: { isActive: true },
+      include: { company: { select: { name: true, logo: true, website: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const recommendations = jobs
+      .map((job) => ({
+        job,
+        matching: calculateMatching(candidateProfile.skills, candidateProfile.experience, job.requirements),
+      }))
+      .sort((left, right) => right.matching.matchingScore - left.matching.matchingScore)
+      .slice(0, limit);
+
+    res.status(200).json({
+      candidateId: candidateProfile.id,
+      total: recommendations.length,
+      recommendations,
+    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Loi server khi lay viec lam goi y.', error: err.message });
   }
 };
