@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { applyJob, getRecruiterApplications, updateApplicationStage } from '../controllers/application.controller';
+import { applyJob, getRankedApplicationsByJob, getRecruiterApplications, updateApplicationStage } from '../controllers/application.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -96,6 +96,36 @@ router.post('/apply', requireAuth, rolesAllowed('CANDIDATE'), applyJob);
  *         description: Server error
  */
 router.get('/recruiter', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplications);
+
+/**
+ * @swagger
+ * /api/v1/application/ranking/{jobId}:
+ *   get:
+ *     tags:
+ *       - Application
+ *     summary: Rank applications for a job
+ *     description: Returns applications ordered by matching score. Recruiters can only view their own jobs; managers and admins can view all jobs.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Ranked candidate applications
+ *       400:
+ *         description: Missing job id
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: Recruiter does not own this job
+ *       404:
+ *         description: Job not found
+ */
+router.get('/ranking/:jobId', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRankedApplicationsByJob);
 
 /**
  * @swagger
