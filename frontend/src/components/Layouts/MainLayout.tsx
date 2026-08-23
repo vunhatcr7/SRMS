@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   Menu,
   ChevronDown,
-  User as UserIcon
+  User as UserIcon,
+  Sparkles
 } from 'lucide-react';
 
 interface MainLayoutProps {
@@ -78,6 +79,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const menuItems = [
     { text: 'Việc làm công ty', path: '/job/list', icon: Briefcase, roles: ['CANDIDATE', 'RECRUITER', 'ADMIN'] },
+    { text: 'AI phân tích CV', path: '/candidate/ai', icon: Sparkles, roles: ['CANDIDATE'] },
     { text: 'Đăng tin tuyển dụng', path: '/job/create', icon: PlusCircle, roles: ['RECRUITER', 'ADMIN'] },
     { text: 'Dashboard duyệt đơn', path: '/dashboard/recruiter', icon: Kanban, roles: ['RECRUITER', 'ADMIN'] },
   ];
