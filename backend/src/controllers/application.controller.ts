@@ -125,6 +125,63 @@ export const getRecruiterApplications = async (req: Request, res: Response): Pro
   }
 };
 
+export const getRankedApplicationsByJob = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const requesterId = (req as any).user?.id;
+    const requesterRole = (req as any).user?.role;
+    const jobId = Array.isArray(req.params.jobId) ? req.params.jobId[0].trim() : req.params.jobId?.trim();
+
+    if (!requesterId || !requesterRole) {
+      res.status(401).json({ message: 'Vui long dang nhap.' });
+      return;
+    }
+
+    if (!jobId) {
+      res.status(400).json({ message: 'Thieu jobId.' });
+      return;
+    }
+
+    const job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, title: true, recruiterId: true } });
+    if (!job) {
+      res.status(404).json({ message: 'Khong tim thay cong viec.' });
+      return;
+    }
+
+    if (requesterRole === 'RECRUITER' && job.recruiterId !== requesterId) {
+      res.status(403).json({ message: 'Ban khong co quyen xem xep hang cua cong viec nay.' });
+      return;
+    }
+
+    const applications = await prisma.application.findMany({
+      where: { jobId },
+      include: {
+        candidateProfile: {
+          include: {
+            user: { select: { id: true, fullName: true, email: true, phone: true, avatar: true } },
+          },
+        },
+      },
+      orderBy: [
+        { matchingScore: 'desc' },
+        { skillScore: 'desc' },
+        { createdAt: 'asc' },
+      ],
+    });
+
+    res.status(200).json({
+      job,
+      total: applications.length,
+      applications: applications.map((application, index) => ({
+        rank: index + 1,
+        ...application,
+      })),
+    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Loi server khi xep hang ung vien.', error: err.message });
+  }
+};
+
 export const updateApplicationStage = async (req: Request, res: Response): Promise<void> => {
   try {
     const body = req.body ?? {};
