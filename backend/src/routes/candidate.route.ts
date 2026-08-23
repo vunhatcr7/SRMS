@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from 'express';
-import { getCandidateProfileByUserId, getMyCandidateProfile, upsertMyCandidateProfile, uploadResume } from '../controllers/candidate.controller';
+import { getCandidateProfileByUserId, getMyCandidateProfile, parseResume, upsertMyCandidateProfile, uploadResume } from '../controllers/candidate.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 import multer from 'multer';
 
@@ -141,6 +141,32 @@ router.put('/profile', requireAuth, rolesAllowed('CANDIDATE'), upsertMyCandidate
  *         description: User is not CANDIDATE
  */
 router.post('/resume', requireAuth, rolesAllowed('CANDIDATE'), uploadResumeFile, uploadResume);
+
+/**
+ * @swagger
+ * /api/v1/candidate/resume/parse:
+ *   post:
+ *     tags:
+ *       - Candidate
+ *     summary: Parse an uploaded CV with AI
+ *     description: Uses the configured OpenAI-compatible provider to extract structured resume data from stored resume text.
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Structured resume data and updated candidate profile
+ *       400:
+ *         description: Candidate has no uploaded resume
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User is not CANDIDATE
+ *       502:
+ *         description: AI provider error or invalid provider response
+ *       503:
+ *         description: AI provider is not configured
+ */
+router.post('/resume/parse', requireAuth, rolesAllowed('CANDIDATE'), parseResume);
 
 /**
  * @swagger
