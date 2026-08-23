@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
+import AuthLayout from '../../components/Layouts/AuthLayout';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -29,13 +30,12 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-panel">
+    <AuthLayout
+      eyebrow="Get started"
+      title="Tạo tài khoản"
+      description="Tham gia hệ thống quản lý tuyển dụng SRMS."
+    >
         <form onSubmit={handleRegister}>
-          <p className="auth-kicker">Get started</p>
-          <h2 className="auth-title">Tạo tài khoản</h2>
-          <p className="auth-subtitle">Tham gia hệ thống quản lý tuyển dụng SRMS.</p>
-          
           <div className="form-field">
             <label htmlFor="register-email">Email</label>
             <input id="register-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="example@gmail.com" />
@@ -68,7 +68,6 @@ export default function Register() {
             {message}
           </div>
         )}
-      </div>
-    </div>
+    </AuthLayout>
   );
 }
