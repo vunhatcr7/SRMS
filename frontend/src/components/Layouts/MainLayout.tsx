@@ -19,7 +19,7 @@ interface MainLayoutProps {
 }
 
 interface UserData {
-  fullName: string;
+  fullName?: string;
   role: string;
   email: string;
 }
@@ -85,7 +85,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
   ];
 
   // Khởi tạo một User giả lập chất lượng cao nếu LocalStorage hoàn toàn trống dữ liệu để bạn luôn thấy UI đẹp mắt khi Dev
-  const activeUser = user || { fullName: "Chưa Đăng Nhập", role: "GUEST", email: "guest@srms.com" };
+  const activeUser = {
+    fullName: user?.fullName?.trim() || user?.email?.split('@')[0] || 'Người dùng',
+    role: user?.role || 'GUEST',
+    email: user?.email || 'guest@srms.com',
+  };
 
   return (
     <div className="flex h-screen bg-slate-50/50 overflow-hidden font-sans antialiased text-slate-800">
