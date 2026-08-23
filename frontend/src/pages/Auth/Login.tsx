@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
+import AuthLayout from '../../components/Layouts/AuthLayout';
 
 interface UserInfo {
   id: string;
@@ -38,14 +39,13 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-panel">
+    <AuthLayout
+      eyebrow="Recruitment management"
+      title="Đăng nhập SRMS"
+      description="Quản lý tuyển dụng và tìm kiếm cơ hội phù hợp."
+    >
         {!user ? (
           <form onSubmit={handleLogin}>
-            <p className="auth-kicker">Recruitment management</p>
-            <h2 className="auth-title">Đăng nhập SRMS</h2>
-            <p className="auth-subtitle">Quản lý tuyển dụng và tìm kiếm cơ hội phù hợp.</p>
-            
             <div className="form-field">
               <label htmlFor="login-email">Email</label>
               <input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="recruiter@fpt.com" />
@@ -83,7 +83,6 @@ export default function Login() {
             {message}
           </div>
         )}
-      </div>
-    </div>
+    </AuthLayout>
   );
 }
