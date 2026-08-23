@@ -6,6 +6,7 @@ import JobList from '../src/pages/Job/JobList';
 import RecruiterDashboard from '../src/pages/Job/RecruiterDashboard';
 import MainLayout from '../src/components/Layouts/MainLayout'; 
 import AIMatching from '../src/pages/Candidate/AIMatching';
+import RouteGuard from '../src/components/RouteGuard';
 
 function App() {
   return (
@@ -22,36 +23,36 @@ function App() {
         <Route 
           path="/job/create" 
           element={
-            <MainLayout>
-              <CreateJob />
-            </MainLayout>
+            <RouteGuard roles={['RECRUITER', 'ADMIN']}>
+              <MainLayout><CreateJob /></MainLayout>
+            </RouteGuard>
           } 
         />
         
         <Route 
           path="/job/list" 
           element={
-            <MainLayout>
-              <JobList />
-            </MainLayout>
+            <RouteGuard roles={['CANDIDATE', 'RECRUITER', 'ADMIN']}>
+              <MainLayout><JobList /></MainLayout>
+            </RouteGuard>
           } 
         />
         
         <Route 
           path="/dashboard/recruiter" 
           element={
-            <MainLayout>
-              <RecruiterDashboard />
-            </MainLayout>
+            <RouteGuard roles={['RECRUITER', 'MANAGER', 'ADMIN']}>
+              <MainLayout><RecruiterDashboard /></MainLayout>
+            </RouteGuard>
           } 
         />
 
         <Route
           path="/candidate/ai"
           element={
-            <MainLayout>
-              <AIMatching />
-            </MainLayout>
+            <RouteGuard roles={['CANDIDATE']}>
+              <MainLayout><AIMatching /></MainLayout>
+            </RouteGuard>
           }
         />
       </Routes>
