@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/db';
+import { extractResumeText } from '../services/resume-parser.service';
 
 const normalizeSkills = (value: unknown): string[] => {
   if (Array.isArray(value)) {
@@ -121,6 +122,45 @@ export const upsertMyCandidateProfile = async (req: Request, res: Response): Pro
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: 'Lỗi server khi lưu hồ sơ ứng viên', error: err.message });
+  }
+};
+
+export const uploadResume = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+    const file = req.file;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Vui lòng đăng nhập để tải CV.' });
+      return;
+    }
+
+    if (!file) {
+      res.status(400).json({ message: 'Vui lòng gửi file CV với field name là resume.' });
+      return;
+    }
+
+    const resumeText = await extractResumeText(file);
+    if (!resumeText.trim()) {
+      res.status(400).json({ message: 'Không thể trích xuất nội dung từ CV này.' });
+      return;
+    }
+
+    const profile = await prisma.candidateProfile.upsert({
+      where: { userId },
+      update: { resumeUrl: file.originalname, resumeText },
+      create: { userId, resumeUrl: file.originalname, resumeText },
+      select: { id: true, userId: true, resumeUrl: true, resumeText: true, updatedAt: true },
+    });
+
+    res.status(200).json({
+      message: 'Tải và đọc CV thành công.',
+      resume: { fileName: file.originalname, mimeType: file.mimetype, textLength: resumeText.length },
+      profile,
+    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(400).json({ message: `Không thể đọc CV: ${err.message}` });
   }
 };
 

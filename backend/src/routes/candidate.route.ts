@@ -1,8 +1,37 @@
-import { Router } from 'express';
-import { getCandidateProfileByUserId, getMyCandidateProfile, upsertMyCandidateProfile } from '../controllers/candidate.controller';
+import { RequestHandler, Router } from 'express';
+import { getCandidateProfileByUserId, getMyCandidateProfile, upsertMyCandidateProfile, uploadResume } from '../controllers/candidate.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
+import multer from 'multer';
 
 const router = Router();
+const upload = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 5 * 1024 * 1024 },
+	fileFilter: (_req, file, callback) => {
+		const acceptedTypes = [
+			'application/pdf',
+			'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+		];
+
+		if (acceptedTypes.includes(file.mimetype)) {
+			callback(null, true);
+			return;
+		}
+
+		callback(new Error('Chi chap nhan file PDF hoac DOCX.'));
+	},
+});
+
+const uploadResumeFile: RequestHandler = (req, res, next) => {
+	upload.single('resume')(req, res, (error: unknown) => {
+		if (error) {
+			res.status(400).json({ message: error instanceof Error ? error.message : 'File CV không hợp lệ.' });
+			return;
+		}
+
+		next();
+	});
+};
 
 /**
  * @swagger
@@ -78,6 +107,40 @@ router.get('/profile', requireAuth, rolesAllowed('CANDIDATE'), getMyCandidatePro
  *         description: Server error
  */
 router.put('/profile', requireAuth, rolesAllowed('CANDIDATE'), upsertMyCandidateProfile);
+
+/**
+ * @swagger
+ * /api/v1/candidate/resume:
+ *   post:
+ *     tags:
+ *       - Candidate
+ *     summary: Upload and extract a CV
+ *     description: Candidate-only endpoint. Accepts PDF or DOCX files up to 5 MB and stores extracted text.
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - resume
+ *             properties:
+ *               resume:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: CV uploaded and parsed
+ *       400:
+ *         description: Missing, oversized, unsupported, or unreadable file
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User is not CANDIDATE
+ */
+router.post('/resume', requireAuth, rolesAllowed('CANDIDATE'), uploadResumeFile, uploadResume);
 
 /**
  * @swagger

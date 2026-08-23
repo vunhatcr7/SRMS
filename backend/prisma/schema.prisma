@@ -82,6 +82,7 @@ model CandidateProfile {
   experience   Json?
   education    Json?
   resumeUrl    String?
+  resumeText   String?
   createdAt    DateTime      @default(now())
   applications Application[]
 }
