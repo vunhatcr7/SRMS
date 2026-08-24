@@ -151,7 +151,7 @@ export const uploadResume = async (req: Request, res: Response): Promise<void> =
       where: { userId },
       update: { resumeUrl: file.originalname, resumeText },
       create: { userId, resumeUrl: file.originalname, resumeText },
-      select: { id: true, userId: true, resumeUrl: true, resumeText: true, updatedAt: true },
+      select: { id: true, userId: true, resumeUrl: true, resumeText: true, createdAt: true },
     });
 
     res.status(200).json({
