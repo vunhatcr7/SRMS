@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileText, Sparkles, Upload, MapPin, Building2 } from 'lucide-react';
+import { FileText, Sparkles, Upload, MapPin, Building2, CheckCircle2, AlertCircle, LoaderCircle } from 'lucide-react';
 import api from '../../api/axios';
 
 interface ParsedResume {
@@ -39,6 +39,8 @@ export default function AIMatching() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  const isSuccess = message.includes('thành công');
+
   const loadRecommendations = async () => {
     try {
       const response = await api.get('/job/recommendations?limit=5');
@@ -67,6 +69,16 @@ export default function AIMatching() {
     event.preventDefault();
     if (!file) {
       setMessage('Hãy chọn file PDF hoặc DOCX trước.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('File CV không được vượt quá 5 MB.');
+      return;
+    }
+
+    if (!['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type)) {
+      setMessage('Chỉ hỗ trợ file PDF hoặc DOCX.');
       return;
     }
 
@@ -112,14 +124,15 @@ export default function AIMatching() {
             <span className="mt-1 text-xs text-slate-400">Tối đa 5 MB</span>
             <input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={(event) => setFile(event.target.files?.[0] || null)} />
           </label>
-          <button type="submit" disabled={loading} className="mt-5 w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-400">
+          <button type="submit" disabled={loading} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400">
+            {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {loading ? 'Đang phân tích...' : 'Đọc và phân tích CV'}
           </button>
-          {message && <p className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">{message}</p>}
+          {message && <p className={`mt-4 flex items-start gap-2 rounded-lg p-3 text-sm ${isSuccess ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-800'}`}>{isSuccess ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />}{message}</p>}
         </form>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900">Kết quả phân tích</h3>
+          <div className="flex items-center gap-2"><h3 className="text-lg font-bold text-slate-900">Kết quả phân tích</h3>{parsedResume && <span className="rounded-full bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700">Đã hoàn tất</span>}</div>
           {!parsedResume ? (
             <p className="mt-8 text-sm text-slate-500">Kết quả kỹ năng và kinh nghiệm sẽ xuất hiện sau khi phân tích CV.</p>
           ) : (
