@@ -8,7 +8,7 @@ interface ParsedResume {
   summary?: string;
 }
 
-const defaultEndpoint = 'https://api.openai.com/v1/chat/completions';
+const defaultEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
 
 const parseJsonResponse = (content: string): unknown => {
   const withoutFence = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
@@ -49,19 +49,20 @@ export const parseResumeWithAI = async (resumeText: string): Promise<ParsedResum
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
+      'x-goog-api-key': apiKey,
     },
     body: JSON.stringify({
-      model: process.env.AI_MODEL || 'gpt-4o-mini',
-      temperature: 0,
-      response_format: { type: 'json_object' },
-      messages: [
+      contents: [
         {
-          role: 'system',
-          content: 'Extract resume information. Return only valid JSON with keys: fullName, email, skills, experienceYears, position, education, summary. skills must be a string array and experienceYears a number.',
+          parts: [{
+            text: `Extract resume information. Return only valid JSON with keys: fullName, email, skills, experienceYears, position, education, summary. skills must be a string array and experienceYears a number.\n\nResume:\n${resumeText.slice(0, 20000)}`,
+          }],
         },
-        { role: 'user', content: resumeText.slice(0, 20000) },
       ],
+      generationConfig: {
+        temperature: 0,
+        responseMimeType: 'application/json',
+      },
     }),
     signal: AbortSignal.timeout(30000),
   });
@@ -70,8 +71,8 @@ export const parseResumeWithAI = async (resumeText: string): Promise<ParsedResum
     throw new Error(`AI provider returned HTTP ${response.status}.`);
   }
 
-  const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
-  const content = payload.choices?.[0]?.message?.content;
+  const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+  const content = payload.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!content) {
     throw new Error('AI provider returned no parsed content.');
   }
