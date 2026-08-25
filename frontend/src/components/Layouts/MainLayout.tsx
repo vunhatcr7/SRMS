@@ -80,6 +80,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const menuItems = [
     { text: 'Việc làm công ty', path: '/job/list', icon: Briefcase, roles: ['CANDIDATE', 'RECRUITER', 'ADMIN'] },
     { text: 'AI phân tích CV', path: '/candidate/ai', icon: Sparkles, roles: ['CANDIDATE'] },
+    { text: 'Hồ sơ của tôi', path: '/candidate/profile', icon: UserIcon, roles: ['CANDIDATE'] },
     { text: 'Đăng tin tuyển dụng', path: '/job/create', icon: PlusCircle, roles: ['RECRUITER', 'ADMIN'] },
     { text: 'Dashboard duyệt đơn', path: '/dashboard/recruiter', icon: Kanban, roles: ['RECRUITER', 'ADMIN'] },
   ];
@@ -212,7 +213,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   
                   {/* Option Xem hồ sơ */}
                   <button 
-                    onClick={() => { setIsDropdownOpen(false); navigate('/profile'); }}
+                    onClick={() => { 
+                      setIsDropdownOpen(false); 
+                      navigate(activeUser.role === 'CANDIDATE' ? '/candidate/profile' : '/dashboard/recruiter'); 
+                    }}
                     className="w-full flex items-center px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 text-left"
                   >
                     <UserIcon className="w-3.5 h-3.5 mr-2.5 text-slate-400" />

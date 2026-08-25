@@ -6,6 +6,9 @@ import JobList from '../src/pages/Job/JobList';
 import RecruiterDashboard from '../src/pages/Job/RecruiterDashboard';
 import MainLayout from '../src/components/Layouts/MainLayout'; 
 import AIMatching from '../src/pages/Candidate/AIMatching';
+import CandidateProfile from '../src/pages/Candidate/CandidateProfile';
+import CandidateDetail from '../src/pages/Candidate/CandidateDetail';
+import AIRanking from '../src/pages/Job/AIRanking';
 import RouteGuard from '../src/components/RouteGuard';
 
 function App() {
@@ -47,11 +50,38 @@ function App() {
           } 
         />
 
+        <Route 
+          path="/dashboard/ranking/:jobId" 
+          element={
+            <RouteGuard roles={['RECRUITER', 'MANAGER', 'ADMIN']}>
+              <MainLayout><AIRanking /></MainLayout>
+            </RouteGuard>
+          } 
+        />
+
         <Route
           path="/candidate/ai"
           element={
             <RouteGuard roles={['CANDIDATE']}>
               <MainLayout><AIMatching /></MainLayout>
+            </RouteGuard>
+          }
+        />
+
+        <Route
+          path="/candidate/profile"
+          element={
+            <RouteGuard roles={['CANDIDATE']}>
+              <MainLayout><CandidateProfile /></MainLayout>
+            </RouteGuard>
+          }
+        />
+
+        <Route
+          path="/candidate/detail/:userId"
+          element={
+            <RouteGuard roles={['RECRUITER', 'MANAGER', 'ADMIN']}>
+              <MainLayout><CandidateDetail /></MainLayout>
             </RouteGuard>
           }
         />
