@@ -27,3 +27,4 @@ export default function SkillTag({ skill, variant = 'default' }: SkillTagProps) 
     </span>
   );
 }
+

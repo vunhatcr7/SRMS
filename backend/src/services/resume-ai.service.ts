@@ -52,7 +52,7 @@ export const parseResumeWithAI = async (resumeText: string): Promise<ParsedResum
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.AI_MODEL || 'gemini-3.6-flash',
+      model: process.env.AI_MODEL || 'gemini-2.0-flash',
       temperature: 0,
       response_format: { type: 'json_object' },
       messages: [

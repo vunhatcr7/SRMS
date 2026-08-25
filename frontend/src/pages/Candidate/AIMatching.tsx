@@ -355,8 +355,7 @@ export default function AIMatching() {
           </div>
 
           <button
-            onClick={() => loadRecommendations(true)}
-            title="Làm mới danh sách gợi ý"
+            onClick={() => loadRecommendations()}
             className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 transition"
           >
             <RefreshCw className={`h-4 w-4 ${loadingRecs ? 'animate-spin' : ''}`} />
