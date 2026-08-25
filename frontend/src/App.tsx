@@ -9,6 +9,7 @@ import AIMatching from '../src/pages/Candidate/AIMatching';
 import CandidateProfile from '../src/pages/Candidate/CandidateProfile';
 import CandidateDetail from '../src/pages/Candidate/CandidateDetail';
 import AIRanking from '../src/pages/Job/AIRanking';
+import NotFound from '../src/pages/NotFound';
 import RouteGuard from '../src/components/RouteGuard';
 
 function App() {
@@ -85,6 +86,9 @@ function App() {
             </RouteGuard>
           }
         />
+
+        {/* 3. Trang 404 Not Found */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
