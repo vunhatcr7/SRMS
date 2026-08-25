@@ -55,19 +55,23 @@ export default function CandidateDetail() {
 
   useEffect(() => {
     if (!userId) return;
-    setLoading(true);
-    setError('');
+    let active = true;
 
     api.get(`/candidate/profile/${userId}`)
       .then((res) => {
+        if (!active) return;
         setProfile(res.data);
       })
       .catch((err) => {
-        setError(getErrorMessage(err));
+        if (active) setError(getErrorMessage(err));
       })
       .finally(() => {
-        setLoading(false);
+        if (active) setLoading(false);
       });
+
+    return () => {
+      active = false;
+    };
   }, [userId]);
 
   if (loading) {
@@ -236,3 +240,4 @@ export default function CandidateDetail() {
     </div>
   );
 }
+

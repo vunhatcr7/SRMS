@@ -1,21 +1,22 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from '../src/pages/Auth/Login';
-import Register from '../src/pages/Auth/Register';
-import CreateJob from '../src/pages/Job/CreateJob';
-import JobList from '../src/pages/Job/JobList';
-import RecruiterDashboard from '../src/pages/Job/RecruiterDashboard';
-import MainLayout from '../src/components/Layouts/MainLayout'; 
-import AIMatching from '../src/pages/Candidate/AIMatching';
-import CandidateProfile from '../src/pages/Candidate/CandidateProfile';
-import CandidateDetail from '../src/pages/Candidate/CandidateDetail';
-import AIRanking from '../src/pages/Job/AIRanking';
-import RouteGuard from '../src/components/RouteGuard';
+import Login from './pages/Auth/Login';
+import Register from './pages/Auth/Register';
+import CreateJob from './pages/Job/CreateJob';
+import JobList from './pages/Job/JobList';
+import RecruiterDashboard from './pages/Job/RecruiterDashboard';
+import MainLayout from './components/Layouts/MainLayout'; 
+import AIMatching from './pages/Candidate/AIMatching';
+import CandidateProfile from './pages/Candidate/CandidateProfile';
+import CandidateDetail from './pages/Candidate/CandidateDetail';
+import AIRanking from './pages/Job/AIRanking';
+import NotFound from './pages/NotFound';
+import RouteGuard from './components/RouteGuard';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Mặc định khi vào trang web, hệ thống tự động đá sang trang /login */}
+        {/* Mặc định khi vào trang web, hệ thống tự động chuyển sang trang /login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         
         {/* 1. Các trang KHÔNG cần Sidebar & Header (Đứng độc lập) */}
@@ -85,6 +86,9 @@ function App() {
             </RouteGuard>
           }
         />
+
+        {/* 3. Trang 404 Not Found */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

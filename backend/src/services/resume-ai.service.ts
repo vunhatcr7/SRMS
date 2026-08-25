@@ -8,7 +8,7 @@ interface ParsedResume {
   summary?: string;
 }
 
-const defaultEndpoint = 'https://api.openai.com/v1/chat/completions';
+const defaultEndpoint = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 
 const parseJsonResponse = (content: string): unknown => {
   const withoutFence = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
@@ -52,7 +52,7 @@ export const parseResumeWithAI = async (resumeText: string): Promise<ParsedResum
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.AI_MODEL || 'gpt-4o-mini',
+      model: process.env.AI_MODEL || 'gemini-2.0-flash',
       temperature: 0,
       response_format: { type: 'json_object' },
       messages: [

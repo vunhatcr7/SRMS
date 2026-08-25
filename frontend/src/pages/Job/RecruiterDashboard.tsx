@@ -75,9 +75,9 @@ export default function RecruiterDashboard() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const fetchApplications = async () => {
+  const fetchApplications = async (showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const res = await api.get('/application/recruiter');
       if (Array.isArray(res.data)) {
         setApplications(
@@ -87,12 +87,32 @@ export default function RecruiterDashboard() {
     } catch (err) {
       showToast(getErrorMessage(err), false);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchApplications();
+    let active = true;
+
+    api.get('/application/recruiter')
+      .then((res) => {
+        if (!active) return;
+        if (Array.isArray(res.data)) {
+          setApplications(
+            [...res.data].sort((a, b) => (b.matchingScore ?? 0) - (a.matchingScore ?? 0))
+          );
+        }
+      })
+      .catch((err) => {
+        if (active) showToast(getErrorMessage(err), false);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Update Process Stage
@@ -214,12 +234,21 @@ export default function RecruiterDashboard() {
             </p>
           </div>
 
-          <button
-            onClick={() => navigate('/job/create')}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-indigo-700 transition shrink-0"
-          >
-            <Briefcase className="h-4 w-4" /> Đăng Tin Tuyển Dụng Mới
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fetchApplications(true)}
+              title="Làm mới danh sách"
+              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition shrink-0"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => navigate('/job/create')}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-indigo-700 transition shrink-0"
+            >
+              <Briefcase className="h-4 w-4" /> Đăng Tin Tuyển Dụng Mới
+            </button>
+          </div>
         </div>
 
         {/* Quick KPI Stats */}
