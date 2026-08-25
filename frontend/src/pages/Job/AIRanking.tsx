@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -77,24 +77,27 @@ export default function AIRanking() {
   const [updatingStageId, setUpdatingStageId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; isSuccess: boolean } | null>(null);
 
-  const fetchRankings = useCallback(async () => {
-    if (!jobId) return;
-    try {
-      setLoading(true);
-      setError('');
-      const res = await api.get(`/application/ranking/${jobId}`);
-      setJob(res.data.job);
-      setCandidates(Array.isArray(res.data.applications) ? res.data.applications : []);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [jobId]);
-
   useEffect(() => {
-    fetchRankings();
-  }, [fetchRankings]);
+    if (!jobId) return;
+    let active = true;
+
+    api.get(`/application/ranking/${jobId}`)
+      .then((res) => {
+        if (!active) return;
+        setJob(res.data.job);
+        setCandidates(Array.isArray(res.data.applications) ? res.data.applications : []);
+      })
+      .catch((err) => {
+        if (active) setError(getErrorMessage(err));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [jobId]);
 
   const showToast = (text: string, isSuccess: boolean) => {
     setToastMessage({ text, isSuccess });

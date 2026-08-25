@@ -70,25 +70,37 @@ export default function AIMatching() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const loadRecommendations = useCallback(async () => {
+  const loadRecommendations = useCallback(async (showLoading = false) => {
     try {
-      setLoadingRecs(true);
+      if (showLoading) setLoadingRecs(true);
       const response = await api.get('/job/recommendations?limit=10');
       setRecommendations(response.data.recommendations || []);
     } catch {
       setRecommendations([]);
     } finally {
-      setLoadingRecs(false);
+      if (showLoading) setLoadingRecs(false);
     }
   }, []);
 
   // Fetch initial profile & recommendations
   useEffect(() => {
-    loadRecommendations();
-    
+    let active = true;
+
+    api.get('/job/recommendations?limit=10')
+      .then((response) => {
+        if (active) setRecommendations(response.data.recommendations || []);
+      })
+      .catch(() => {
+        if (active) setRecommendations([]);
+      })
+      .finally(() => {
+        if (active) setLoadingRecs(false);
+      });
+
     // Check if candidate already has a profile to populate parsed state
     api.get('/candidate/profile')
       .then((res) => {
+        if (!active) return;
         const p = res.data;
         if (p) {
           setParsedResume({
@@ -107,7 +119,11 @@ export default function AIMatching() {
       .catch(() => {
         // No profile yet
       });
-  }, [loadRecommendations]);
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleAnalyze = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -339,7 +355,7 @@ export default function AIMatching() {
           </div>
 
           <button
-            onClick={loadRecommendations}
+            onClick={() => loadRecommendations(true)}
             title="Làm mới danh sách gợi ý"
             className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 transition"
           >

@@ -71,9 +71,9 @@ export default function CandidateProfile() {
   const [cvUploadMessage, setCvUploadMessage] = useState('');
   const [cvSuccess, setCvSuccess] = useState(false);
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const res = await api.get('/candidate/profile');
       const data: CandidateProfileResponse = res.data;
       setProfile(data);
@@ -92,12 +92,39 @@ export default function CandidateProfile() {
       // Profile not created yet
       setProfile(null);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProfile();
+    let active = true;
+    api.get('/candidate/profile')
+      .then((res) => {
+        if (!active) return;
+        const data: CandidateProfileResponse = res.data;
+        setProfile(data);
+
+        setSkills(Array.isArray(data.skills) ? data.skills : []);
+        if (data.experience && typeof data.experience === 'object') {
+          setExperienceYears(data.experience.years ?? 0);
+          setPosition(data.experience.position ?? '');
+          setExperienceSummary(data.experience.summary ?? '');
+        }
+        if (data.education && typeof data.education === 'object') {
+          setEducationSummary(data.education.summary || `${data.education.school || ''} ${data.education.major || ''}`.trim());
+        }
+        setResumeUrl(data.resumeUrl || '');
+      })
+      .catch(() => {
+        if (active) setProfile(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleAddSkill = () => {
