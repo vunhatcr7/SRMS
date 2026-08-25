@@ -16,7 +16,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Mặc định khi vào trang web, hệ thống tự động đá sang trang /login */}
+        {/* Mặc định khi vào trang web, hệ thống tự động chuyển sang trang /login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         
         {/* 1. Các trang KHÔNG cần Sidebar & Header (Đứng độc lập) */}
