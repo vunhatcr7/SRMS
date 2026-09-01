@@ -10,6 +10,7 @@ export const createJob = async (req: Request, res: Response): Promise<void> => {
     const description = typeof body.description === 'string' ? body.description.trim() : '';
     const requirements = typeof body.requirements === 'string' ? body.requirements.trim() : '';
     const salaryRange = typeof body.salaryRange === 'string' ? body.salaryRange.trim() : undefined;
+    const benefits = typeof body.benefits === 'string' ? body.benefits.trim() : undefined;
     const location = typeof body.location === 'string' ? body.location.trim() : '';
     const companyName = typeof body.companyName === 'string' ? body.companyName.trim() : '';
 
@@ -28,7 +29,7 @@ export const createJob = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if ([title, description, requirements, location, companyName].some((value) => value.length > 5000)) {
+    if ([title, description, requirements, location, companyName, benefits || ''].some((value) => value.length > 5000)) {
       res.status(400).json({ message: 'Nội dung tin tuyển dụng vượt quá độ dài cho phép.' });
       return;
     }
@@ -50,6 +51,7 @@ export const createJob = async (req: Request, res: Response): Promise<void> => {
         title,
         description,
         requirements,
+        benefits: benefits || undefined,
         salaryRange,
         location,
         companyId: company.id,

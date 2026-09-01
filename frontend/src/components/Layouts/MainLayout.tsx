@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Briefcase, 
-  Kanban, 
-  PlusCircle,
-  Search, 
-  Bell, 
+  Briefcase,
+  LayoutGrid,
+  Users,
+  ClipboardList,
+  BarChart3,
+  Search,
+  Bell,
   LogOut,
   ChevronLeft,
   Menu,
   ChevronDown,
   User as UserIcon,
-  Sparkles
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface MainLayoutProps {
@@ -33,6 +36,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   
   // 🔥 State quản lý đóng/mở Dropdown User Profile trên Header
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const savedTheme = localStorage.getItem('srms-theme');
+    return savedTheme === 'light' ? 'light' : 'dark';
+  });
   
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -72,18 +79,45 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem('srms-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    window.dispatchEvent(new CustomEvent('srms-theme-change', { detail: theme }));
+  }, [theme]);
+
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login');
   };
 
   const menuItems = [
-    { text: 'Việc làm công ty', path: '/job/list', icon: Briefcase, roles: ['CANDIDATE', 'RECRUITER', 'ADMIN'] },
-    { text: 'AI phân tích CV', path: '/candidate/ai', icon: Sparkles, roles: ['CANDIDATE'] },
-    { text: 'Hồ sơ của tôi', path: '/candidate/profile', icon: UserIcon, roles: ['CANDIDATE'] },
-    { text: 'Đăng tin tuyển dụng', path: '/job/create', icon: PlusCircle, roles: ['RECRUITER', 'ADMIN'] },
-    { text: 'Dashboard duyệt đơn', path: '/dashboard/recruiter', icon: Kanban, roles: ['RECRUITER', 'ADMIN'] },
+    { text: 'Overview', path: '/dashboard/recruiter', icon: LayoutGrid, roles: ['RECRUITER', 'MANAGER', 'ADMIN'] },
+    { text: 'Jobs', path: '/job/list', icon: Briefcase, roles: ['CANDIDATE', 'RECRUITER', 'ADMIN'] },
+    { text: 'Candidates', path: '/candidate/ai', icon: Users, roles: ['CANDIDATE', 'RECRUITER', 'ADMIN'] },
+    { text: 'Interviews', path: '/dashboard/recruiter', icon: ClipboardList, roles: ['RECRUITER', 'MANAGER', 'ADMIN'] },
+    { text: 'Reports', path: '/dashboard/recruiter', icon: BarChart3, roles: ['RECRUITER', 'MANAGER', 'ADMIN'] },
   ];
+
+  const [activeMenu, setActiveMenu] = useState<string>('Overview');
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/job')) {
+      setActiveMenu('Jobs');
+      return;
+    }
+
+    if (location.pathname.startsWith('/candidate')) {
+      setActiveMenu('Candidates');
+      return;
+    }
+
+    if (location.pathname.startsWith('/dashboard')) {
+      setActiveMenu('Overview');
+      return;
+    }
+
+    setActiveMenu('Overview');
+  }, [location.pathname]);
 
   // Khởi tạo một User giả lập chất lượng cao nếu LocalStorage hoàn toàn trống dữ liệu để bạn luôn thấy UI đẹp mắt khi Dev
   const activeUser = {
@@ -92,54 +126,50 @@ export default function MainLayout({ children }: MainLayoutProps) {
     email: user?.email || 'guest@srms.com',
   };
 
+  const isDarkTheme = theme === 'dark';
+
   return (
-    <div className="flex h-screen bg-slate-50/50 overflow-hidden font-sans antialiased text-slate-800">
-      
-      {/* 1. SIDEBAR CO GIÃN THÔNG MINH */}
-      <aside className={`${isCollapsed ? 'w-16' : 'w-60'} bg-white border-r border-slate-100 flex flex-col justify-between z-20 transition-all duration-300 relative flex-shrink-0`}>
-        <div className="py-4 px-3 space-y-6">
-          
-          {/* Brand Logo */}
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'px-3'} mb-2 h-7`}>
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-indigo-100 flex-shrink-0">
+    <div className={`flex h-screen overflow-hidden antialiased transition-colors duration-200 ${isDarkTheme ? 'bg-[#0b1324] text-slate-100' : 'bg-slate-100 text-slate-800'}`}>
+      <aside className={`${isCollapsed ? 'w-20' : 'w-64'} flex flex-col justify-between border-r transition-all duration-300 ${isDarkTheme ? 'border-white/10 bg-[#0f172a]' : 'border-slate-200 bg-white'}`}>
+        <div className="px-3 py-3">
+          <div className={`mb-5 flex items-center ${isCollapsed ? 'justify-center' : 'px-2'} h-10`}>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#3c6dfc] text-[11px] font-black text-white shadow-sm shadow-blue-500/20">
               S
             </div>
             {!isCollapsed && (
-              <div className="ml-2.5">
-                <h1 className="text-sm font-bold text-slate-900 tracking-tight leading-none">SRMS</h1>
-                <span className="text-[10px] font-medium text-slate-400 block mt-1">AI Recruitment</span>
+              <div className="ml-2.5 leading-none">
+                <div className={`text-[13px] font-bold tracking-tight ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>SRMS</div>
               </div>
             )}
           </div>
 
-          {/* Cụm Menu */}
-          <div className="space-y-1">
-            {!isCollapsed && (
-              <span className="px-3 text-[11px] font-semibold text-slate-400/80 tracking-wider block mb-1.5 uppercase">
-                Hệ thống
-              </span>
-            )}
-            
+          <div className="space-y-1.5">
             {menuItems
-              .filter(item => item.roles.includes(activeUser.role) || activeUser.role === 'GUEST')
+              .filter((item) => item.roles.includes(activeUser.role) || activeUser.role === 'GUEST')
               .map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive = activeMenu === item.text;
                 const Icon = item.icon;
+
                 return (
                   <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center py-2 rounded-lg transition-all duration-150 group text-left ${
-                      isCollapsed ? 'justify-center px-0' : 'px-3'
+                    key={item.path + item.text}
+                    onClick={() => {
+                      setActiveMenu(item.text);
+                      navigate(item.path);
+                    }}
+                    className={`flex w-full items-center rounded-xl px-3 py-2 text-left transition ${
+                      isCollapsed ? 'justify-center px-0' : ''
                     } ${
                       isActive
-                        ? 'bg-slate-100 text-slate-900 font-bold'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-[#2d64ff] text-white shadow-md shadow-blue-500/20'
+                        : isDarkTheme
+                          ? 'text-slate-300 hover:bg-white/5 hover:text-white'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     }`}
                     title={isCollapsed ? item.text : undefined}
                   >
-                    <Icon className={`w-4 h-4 stroke-[1.8] flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-3'} ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                    {!isCollapsed && <span className="flex-1 truncate text-xs">{item.text}</span>}
+                    <Icon className={`h-4 w-4 shrink-0 ${isCollapsed ? '' : 'mr-3'} ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    {!isCollapsed && <span className="truncate text-[13px] font-medium">{item.text}</span>}
                   </button>
                 );
               })}
@@ -147,105 +177,98 @@ export default function MainLayout({ children }: MainLayoutProps) {
         </div>
       </aside>
 
-      {/* 2. KHU VỰC BÊN PHẢI (HEADER MỚI + CONTENT WORKSPACE) */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        
-        {/* Header tích hợp Nút đóng mở, Ô tìm kiếm và Khối Dropdown User */}
-        <header className="h-14 bg-white border-b border-slate-100 flex items-center justify-between px-6 z-30">
-          
-          <div className="flex items-center space-x-4">
-            {/* Nút Toggle Sidebar */}
-            <button 
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className={`flex h-16 items-center justify-between border-b px-5 ${isDarkTheme ? 'border-white/10 bg-[#0d1b2d]' : 'border-slate-200 bg-white'}`}>
+          <div className="flex items-center gap-4">
+            <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 border border-slate-200/60 shadow-sm transition-all duration-200"
-              title={isCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg border ${isDarkTheme ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              title={isCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
             >
-              {isCollapsed ? <Menu className="w-4 h-4 stroke-[2]" /> : <ChevronLeft className="w-4 h-4 stroke-[2]" />}
+              {isCollapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
 
-            {/* Ô tìm kiếm */}
-            <div className="relative w-72 hidden sm:block">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 stroke-[1.8]" />
-              <input 
-                type="text" 
-                placeholder="Search candidates, jobs..." 
-                className="w-full bg-slate-50/50 border border-slate-200/80 rounded-lg pl-9 pr-3 py-1.5 text-xs font-medium placeholder-slate-400 focus:outline-none focus:border-indigo-500/50 focus:bg-white transition-all"
+            <div className="relative w-[320px] hidden sm:block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search anything"
+                className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-slate-100 placeholder:text-slate-400 focus:border-blue-500/60 focus:outline-none"
               />
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* Nút Chuông Thông báo */}
-            <button className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 relative transition-colors mr-1">
-              <Bell className="w-4 h-4 stroke-[1.8]" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border ${isDarkTheme ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              aria-label="Toggle theme"
+              title={isDarkTheme ? 'Chuyển sang light mode' : 'Chuyển sang dark mode'}
+            >
+              {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
 
-            {/* 🔥 KHỐI DROPDOWN THÔNG TIN USER PROFILE HOÀN CHỈNH */}
+            <button className={`relative rounded-lg border p-2 ${isDarkTheme ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+              <Bell className="h-4 w-4" />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#3a7afe]" />
+            </button>
+
             <div className="relative" ref={dropdownRef}>
-              <button 
+              <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center space-x-2.5 pl-4 border-l border-slate-100 focus:outline-none group py-1"
+                className={`flex items-center gap-3 rounded-xl border px-2 py-1.5 text-left ${isDarkTheme ? 'border-white/10 bg-white/5 hover:bg-white/10' : 'border-slate-200 bg-slate-100 hover:bg-slate-200'}`}
               >
-                {/* Avatar Tròn Gradient */}
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm border border-indigo-100 flex-shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#7c4dff] to-[#3f7ef9] text-xs font-bold text-white">
                   {activeUser.fullName.charAt(0).toUpperCase()}
                 </div>
-                
-                {/* Tên & Quyền tài khoản */}
-                <div className="text-left hidden md:block">
-                  <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-slate-900 transition-colors">{activeUser.fullName}</p>
-                  <span className="inline-block bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.2 rounded-md mt-0.5 uppercase tracking-wider scale-95 origin-left">
+                <div className="hidden text-left md:block">
+                  <div className={`text-xs font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{activeUser.fullName}</div>
+                  <div className={`text-[9px] uppercase tracking-[0.12em] ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>
                     {activeUser.role === 'RECRUITER' ? 'HR Manager' : activeUser.role}
-                  </span>
+                  </div>
                 </div>
-
-                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-3.5 w-3.5 transition ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'} ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* 🔥 MENU THẢ XUỐNG KHI BẤM VÀO USER PROFILE */}
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl py-1 z-40 origin-top-right transition-all animate-in fade-in slide-in-from-top-1">
-                  <div className="px-4 py-2 border-b border-slate-50">
-                    <p className="text-[10px] font-medium text-slate-400">Đăng nhập với</p>
-                    <p className="text-xs font-semibold text-slate-700 truncate mt-0.5">{activeUser.email}</p>
+                <div className={`absolute right-0 z-40 mt-2 w-48 rounded-xl border p-1 shadow-2xl ${isDarkTheme ? 'border-white/10 bg-[#121b2d]' : 'border-slate-200 bg-white'}`}>
+                  <div className={`border-b px-3 py-2 ${isDarkTheme ? 'border-white/10' : 'border-slate-200'}`}>
+                    <div className={`text-[10px] uppercase tracking-[0.12em] ${isDarkTheme ? 'text-slate-500' : 'text-slate-400'}`}>Signed in as</div>
+                    <div className={`mt-1 truncate text-xs font-medium ${isDarkTheme ? 'text-slate-200' : 'text-slate-700'}`}>{activeUser.email}</div>
                   </div>
-                  
-                  {/* Option Xem hồ sơ */}
-                  <button 
-                    onClick={() => { 
-                      setIsDropdownOpen(false); 
-                      navigate(activeUser.role === 'CANDIDATE' ? '/candidate/profile' : '/dashboard/recruiter'); 
+
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      navigate(activeUser.role === 'CANDIDATE' ? '/candidate/profile' : '/dashboard/recruiter');
                     }}
-                    className="w-full flex items-center px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 text-left"
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${isDarkTheme ? 'text-slate-200 hover:bg-white/5' : 'text-slate-700 hover:bg-slate-100'}`}
                   >
-                    <UserIcon className="w-3.5 h-3.5 mr-2.5 text-slate-400" />
+                    <UserIcon className="h-3.5 w-3.5 text-slate-400" />
                     Hồ sơ của tôi
                   </button>
 
-                  {/* Option Đăng xuất */}
-                  <button 
-                    onClick={() => { setIsDropdownOpen(false); handleLogout(); }}
-                    className="w-full flex items-center px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50/50 text-left border-t border-slate-50"
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      handleLogout();
+                    }}
+                    className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-left text-xs font-semibold text-rose-300 hover:bg-rose-500/10"
                   >
-                    <LogOut className="w-3.5 h-3.5 mr-2.5 text-rose-500" />
+                    <LogOut className="h-3.5 w-3.5" />
                     Đăng xuất tài khoản
                   </button>
                 </div>
               )}
             </div>
-
           </div>
         </header>
 
-        {/* 3. WORKSPACE CHỨA NỘI DUNG TRANG CHÍNH */}
-        <main className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
-          <div className="max-w-5xl mx-auto">
-            {children}
-          </div>
+        <main className={`flex-1 overflow-y-auto p-6 ${isDarkTheme ? 'bg-[#0b162d]' : 'bg-slate-100'}`}>
+          <div className="mx-auto max-w-[1180px]">{children}</div>
         </main>
       </div>
-
     </div>
   );
 }
