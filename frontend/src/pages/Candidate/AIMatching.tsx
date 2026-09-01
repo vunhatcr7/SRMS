@@ -37,6 +37,7 @@ interface Recommendation {
     salaryRange?: string;
     description?: string;
     requirements?: string;
+    benefits?: string;
     company: { name: string };
   };
   matching: {
@@ -439,6 +440,11 @@ export default function AIMatching() {
                   {job.requirements && (
                     <div className="text-[11px] text-slate-500">
                       <strong className="text-slate-700">Yêu cầu vị trí:</strong> {job.requirements}
+                    </div>
+                  )}
+                  {job.benefits && (
+                    <div className="text-[11px] text-slate-500">
+                      <strong className="text-slate-700">Quyền lợi:</strong> {job.benefits}
                     </div>
                   )}
                 </article>

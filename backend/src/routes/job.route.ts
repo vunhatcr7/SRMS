@@ -39,6 +39,9 @@ const router = Router();
  *               salaryRange:
  *                 type: string
  *                 example: "8M - 12M"
+ *               benefits:
+ *                 type: string
+ *                 example: "Bảo hiểm đầy đủ, lương tháng 13, hybrid remote"
  *               location:
  *                 type: string
  *                 example: "Ho Chi Minh City"

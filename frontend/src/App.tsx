@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
-import CreateJob from './pages/Job/CreateJob';
 import JobList from './pages/Job/JobList';
 import RecruiterDashboard from './pages/Job/RecruiterDashboard';
 import MainLayout from './components/Layouts/MainLayout'; 
@@ -24,15 +23,8 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         {/* 2. Các trang nghiệp vụ hệ thống CẦN Sidebar & Header (Bọc kín bằng MainLayout) */}
-        <Route 
-          path="/job/create" 
-          element={
-            <RouteGuard roles={['RECRUITER', 'ADMIN']}>
-              <MainLayout><CreateJob /></MainLayout>
-            </RouteGuard>
-          } 
-        />
-        
+        <Route path="/job/create" element={<Navigate to="/dashboard/recruiter?createJob=1" replace />} />
+
         <Route 
           path="/job/list" 
           element={

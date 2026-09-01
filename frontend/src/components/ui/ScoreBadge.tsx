@@ -26,3 +26,4 @@ export default function ScoreBadge({ score, label, size = 'md' }: ScoreBadgeProp
     </span>
   );
 }
+

@@ -117,6 +117,7 @@ async function main() {
       description: 'Build responsive web interfaces for the SRMS platform.',
       requirements: 'React, TypeScript, Node.js, REST API, teamwork',
       salaryRange: '15M - 25M',
+      benefits: 'Bảo hiểm đầy đủ, lương tháng 13, hybrid 2 ngày/tuần, đào tạo nội bộ.',
       location: 'Ho Chi Minh City',
       isActive: true,
     },
