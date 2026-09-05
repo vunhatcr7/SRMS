@@ -41,7 +41,6 @@ interface ParsedResume {
   summary?: string;
 }
 interface ResumeFileInfo { fileName: string; mimeType?: string; size?: number; }
-  {null}
 const emptyParsedResume: ParsedResume = { skills: [], experienceYears: 0 };
 const getStoredUser = (): ProfileUser => {
   try {

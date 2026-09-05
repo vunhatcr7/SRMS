@@ -72,7 +72,9 @@ export const createJob = async (req: Request, res: Response): Promise<void> => {
 // 📂 API: Lấy danh sách toàn bộ tin tuyển dụng
 export const getAllJobs = async (req: Request, res: Response): Promise<void> => {
   try {
+    const activeOnly = req.query.active === 'true';
     const jobs = await prisma.job.findMany({
+      where: activeOnly ? { isActive: true } : undefined,
       include: {
         company: true // Lấy kèm luôn thông tin công ty
       },
@@ -82,6 +84,32 @@ export const getAllJobs = async (req: Request, res: Response): Promise<void> => 
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: 'Lỗi server khi lấy danh sách job', error: err.message });
+  }
+};
+
+export const getJobById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const jobId = Array.isArray(req.params.jobId) ? req.params.jobId[0].trim() : req.params.jobId?.trim();
+
+    if (!jobId) {
+      res.status(400).json({ message: 'Thiếu jobId.' });
+      return;
+    }
+
+    const job = await prisma.job.findFirst({
+      where: { id: jobId, isActive: true },
+      include: { company: true },
+    });
+
+    if (!job) {
+      res.status(404).json({ message: 'Không tìm thấy công việc đang tuyển.' });
+      return;
+    }
+
+    res.status(200).json(job);
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Lỗi server khi lấy chi tiết công việc', error: err.message });
   }
 };
 

@@ -6,6 +6,39 @@ import { calculateMatching } from '../services/matching.service';
 const validStages = Object.values(ProcessStage);
 const isHttpUrl = (value: string): boolean => /^https?:\/\/\S+$/i.test(value);
 
+export const getMyApplicationForJob = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+    const jobId = Array.isArray(req.params.jobId) ? req.params.jobId[0].trim() : req.params.jobId?.trim();
+
+    if (!userId) {
+      res.status(401).json({ message: 'Vui lòng đăng nhập bằng tài khoản ứng viên.' });
+      return;
+    }
+
+    if (!jobId) {
+      res.status(400).json({ message: 'Thiếu jobId.' });
+      return;
+    }
+
+    const candidateProfile = await prisma.candidateProfile.findUnique({ where: { userId } });
+    if (!candidateProfile) {
+      res.status(200).json({ applied: false, application: null });
+      return;
+    }
+
+    const application = await prisma.application.findUnique({
+      where: { jobId_candidateId: { jobId, candidateId: candidateProfile.id } },
+      select: { id: true, jobId: true, stage: true, matchingScore: true, skillScore: true, experienceScore: true, aiExplanation: true, createdAt: true },
+    });
+
+    res.status(200).json({ applied: Boolean(application), application });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Lỗi server khi kiểm tra trạng thái ứng tuyển.', error: err.message });
+  }
+};
+
 export const applyJob = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user?.id;
@@ -60,22 +93,31 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (alreadyApplied) {
-      res.status(400).json({ message: 'Ban da nop don ung tuyen cho cong viec nay roi.' });
+      res.status(400).json({ code: 'ALREADY_APPLIED', message: 'Bạn đã nộp đơn ứng tuyển cho công việc này rồi.' });
       return;
     }
 
-    const newApplication = await prisma.application.create({
-      data: {
-        jobId,
-        candidateId: candidateProfile.id,
-        stage: ProcessStage.APPLIED,
-        ...calculateMatching(
-          candidateProfile.skills,
-          candidateProfile.experience,
-          jobExists.requirements,
-        ),
-      },
-    });
+    let newApplication;
+    try {
+      newApplication = await prisma.application.create({
+        data: {
+          jobId,
+          candidateId: candidateProfile.id,
+          stage: ProcessStage.APPLIED,
+          ...calculateMatching(
+            candidateProfile.skills,
+            candidateProfile.experience,
+            jobExists.requirements,
+          ),
+        },
+      });
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'P2002') {
+        res.status(400).json({ code: 'ALREADY_APPLIED', message: 'Bạn đã nộp đơn ứng tuyển cho công việc này rồi.' });
+        return;
+      }
+      throw error;
+    }
 
     res.status(201).json({
       message: 'Nop don ung tuyen thanh cong.',

@@ -126,6 +126,8 @@ model Application {
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   interviews Interview[]
+
+  @@unique([jobId, candidateId])
 }
 
 // 9. Bảng quản lý lịch phỏng vấn (Đã tinh gọn, chỉ tập trung vào quản lý lịch trình)

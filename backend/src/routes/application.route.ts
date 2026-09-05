@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { applyJob, getRankedApplicationsByJob, getRecruiterApplications, updateApplicationStage } from '../controllers/application.controller';
+import { applyJob, getMyApplicationForJob, getRankedApplicationsByJob, getRecruiterApplications, updateApplicationStage } from '../controllers/application.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -48,6 +48,8 @@ const router = Router();
  *         description: Server error
  */
 router.post('/apply', requireAuth, rolesAllowed('CANDIDATE'), applyJob);
+
+router.get('/status/:jobId', requireAuth, rolesAllowed('CANDIDATE'), getMyApplicationForJob);
 
 /**
  * @swagger
