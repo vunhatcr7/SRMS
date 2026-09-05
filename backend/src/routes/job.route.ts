@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createJob, getAllJobs, getRecommendedJobs } from '../controllers/job.controller';
+import { createJob, getAllJobs, getJobById, getRecommendedJobs } from '../controllers/job.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -105,5 +105,7 @@ router.get('/', getAllJobs);
  *         description: Candidate profile not found
  */
 router.get('/recommendations', requireAuth, rolesAllowed('CANDIDATE'), getRecommendedJobs);
+
+router.get('/:jobId', getJobById);
 
 export default router;
