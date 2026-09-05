@@ -64,14 +64,6 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
 
   useEffect(() => {
     if (!open) return;
-    setFormData(INITIAL_FORM);
-    setMessage('');
-    setIsSuccess(false);
-    setLoading(false);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();

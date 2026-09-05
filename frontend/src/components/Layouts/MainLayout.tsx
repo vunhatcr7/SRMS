@@ -5,7 +5,6 @@ import {
   LayoutGrid,
   Users,
   ClipboardList,
-  BarChart3,
   Search,
   Bell,
   LogOut,
@@ -90,41 +89,44 @@ export default function MainLayout({ children }: MainLayoutProps) {
     navigate('/login');
   };
 
-  const menuItems = [
-    { text: 'Overview', path: '/dashboard/recruiter', icon: LayoutGrid, roles: ['RECRUITER', 'MANAGER', 'ADMIN'] },
-    { text: 'Jobs', path: '/job/list', icon: Briefcase, roles: ['CANDIDATE', 'RECRUITER', 'ADMIN'] },
-    { text: 'Candidates', path: '/candidate/ai', icon: Users, roles: ['CANDIDATE', 'RECRUITER', 'ADMIN'] },
-    { text: 'Interviews', path: '/dashboard/recruiter', icon: ClipboardList, roles: ['RECRUITER', 'MANAGER', 'ADMIN'] },
-    { text: 'Reports', path: '/dashboard/recruiter', icon: BarChart3, roles: ['RECRUITER', 'MANAGER', 'ADMIN'] },
-  ];
-
-  const [activeMenu, setActiveMenu] = useState<string>('Overview');
-
-  useEffect(() => {
-    if (location.pathname.startsWith('/job')) {
-      setActiveMenu('Jobs');
-      return;
-    }
-
-    if (location.pathname.startsWith('/candidate')) {
-      setActiveMenu('Candidates');
-      return;
-    }
-
-    if (location.pathname.startsWith('/dashboard')) {
-      setActiveMenu('Overview');
-      return;
-    }
-
-    setActiveMenu('Overview');
-  }, [location.pathname]);
-
-  // Khởi tạo một User giả lập chất lượng cao nếu LocalStorage hoàn toàn trống dữ liệu để bạn luôn thấy UI đẹp mắt khi Dev
   const activeUser = {
     fullName: user?.fullName?.trim() || user?.email?.split('@')[0] || 'Người dùng',
     role: user?.role || 'GUEST',
     email: user?.email || 'guest@srms.com',
   };
+
+  const menuItems = activeUser.role === 'ADMIN'
+    ? [
+        { text: 'Dashboard', path: '/admin', icon: LayoutGrid },
+        { text: 'Users', path: '/admin/users', icon: Users },
+        { text: 'Jobs', path: '/admin/jobs', icon: Briefcase },
+        { text: 'Settings', path: '/admin/settings', icon: ClipboardList },
+      ]
+    : [
+        { text: 'Overview', path: '/recruiter', icon: LayoutGrid },
+        { text: 'Jobs', path: '/recruiter/jobs', icon: Briefcase },
+        { text: 'Candidates', path: '/recruiter/candidates', icon: Users },
+        { text: 'Pipeline', path: '/recruiter/pipeline', icon: ClipboardList },
+        { text: 'Interviews', path: '/recruiter/interviews', icon: ClipboardList },
+      ];
+
+  const activeMenu = location.pathname.startsWith('/admin/users')
+    ? 'Users'
+    : location.pathname.startsWith('/admin/jobs')
+      ? 'Jobs'
+      : location.pathname.startsWith('/admin/settings')
+        ? 'Settings'
+        : location.pathname.startsWith('/admin')
+          ? 'Dashboard'
+          : location.pathname.startsWith('/recruiter/jobs')
+            ? 'Jobs'
+            : location.pathname.startsWith('/recruiter/candidates')
+              ? 'Candidates'
+              : location.pathname.startsWith('/recruiter/pipeline')
+                ? 'Pipeline'
+                : location.pathname.startsWith('/recruiter/interviews')
+                  ? 'Interviews'
+                  : 'Overview';
 
   const isDarkTheme = theme === 'dark';
 
@@ -145,7 +147,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
           <div className="space-y-1.5">
             {menuItems
-              .filter((item) => item.roles.includes(activeUser.role) || activeUser.role === 'GUEST')
               .map((item) => {
                 const isActive = activeMenu === item.text;
                 const Icon = item.icon;
@@ -154,7 +155,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   <button
                     key={item.path + item.text}
                     onClick={() => {
-                      setActiveMenu(item.text);
                       navigate(item.path);
                     }}
                     className={`flex w-full items-center rounded-xl px-3 py-2 text-left transition ${
@@ -241,7 +241,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   <button
                     onClick={() => {
                       setIsDropdownOpen(false);
-                      navigate(activeUser.role === 'CANDIDATE' ? '/candidate/profile' : '/dashboard/recruiter');
+                      navigate(activeUser.role === 'CANDIDATE' ? '/candidate/profile' : activeUser.role === 'ADMIN' ? '/admin' : '/recruiter');
                     }}
                     className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${isDarkTheme ? 'text-slate-200 hover:bg-white/5' : 'text-slate-700 hover:bg-slate-100'}`}
                   >

@@ -5,7 +5,6 @@ import CreateJobModal from '../../components/CreateJobModal';
 
 export default function RecruiterDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isCreateJobOpen, setIsCreateJobOpen] = useState(searchParams.get('createJob') === '1');
   const [toast, setToast] = useState<{ message: string; isSuccess: boolean } | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const savedTheme = localStorage.getItem('srms-theme');
@@ -18,7 +17,6 @@ export default function RecruiterDashboard() {
   };
 
   const openCreateJob = () => {
-    setIsCreateJobOpen(true);
     if (searchParams.get('createJob') !== '1') {
       const next = new URLSearchParams(searchParams);
       next.set('createJob', '1');
@@ -27,17 +25,12 @@ export default function RecruiterDashboard() {
   };
 
   const closeCreateJob = () => {
-    setIsCreateJobOpen(false);
     if (searchParams.has('createJob')) {
       const next = new URLSearchParams(searchParams);
       next.delete('createJob');
       setSearchParams(next, { replace: true });
     }
   };
-
-  useEffect(() => {
-    setIsCreateJobOpen(searchParams.get('createJob') === '1');
-  }, [searchParams]);
 
   useEffect(() => {
     const syncTheme = () => {
@@ -219,11 +212,13 @@ export default function RecruiterDashboard() {
         </div>
       </div>
 
-      <CreateJobModal
-        open={isCreateJobOpen}
-        onClose={closeCreateJob}
-        onCreated={() => showToast('Đăng tin tuyển dụng thành công!', true)}
-      />
+      {searchParams.get('createJob') === '1' && (
+        <CreateJobModal
+          open
+          onClose={closeCreateJob}
+          onCreated={() => showToast('Đăng tin tuyển dụng thành công!', true)}
+        />
+      )}
     </div>
   );
 }

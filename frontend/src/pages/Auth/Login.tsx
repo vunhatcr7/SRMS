@@ -29,7 +29,10 @@ export default function Login() {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       setMessage(resMessage);
-      setTimeout(() => navigate(userData.role === 'CANDIDATE' ? '/candidate/ai' : '/dashboard/recruiter'), 400);
+      setTimeout(() => {
+        const destination = userData.role === 'CANDIDATE' ? '/candidate' : userData.role === 'ADMIN' ? '/admin' : '/recruiter';
+        navigate(destination);
+      }, 400);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       setMessage(err.response?.data?.message || 'Đăng nhập thất bại!');

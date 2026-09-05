@@ -46,18 +46,19 @@ interface CandidateProfileDetail {
 }
 
 export default function CandidateDetail() {
-  const { userId } = useParams<{ userId: string }>();
+  const { candidateId, userId } = useParams<{ candidateId?: string; userId?: string }>();
   const navigate = useNavigate();
+  const profileUserId = candidateId || userId;
 
   const [profile, setProfile] = useState<CandidateProfileDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!userId) return;
+    if (!profileUserId) return;
     let active = true;
 
-    api.get(`/candidate/profile/${userId}`)
+    api.get(`/candidate/profile/${profileUserId}`)
       .then((res) => {
         if (!active) return;
         setProfile(res.data);
@@ -72,7 +73,7 @@ export default function CandidateDetail() {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [profileUserId]);
 
   if (loading) {
     return (
