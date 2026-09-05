@@ -149,12 +149,12 @@ router.post('/resume', requireAuth, rolesAllowed('CANDIDATE'), uploadResumeFile,
  *     tags:
  *       - Candidate
  *     summary: Parse an uploaded CV with AI
- *     description: Uses the configured OpenAI-compatible provider to extract structured resume data from stored resume text.
+ *     description: Uses the configured OpenAI-compatible provider to extract a reviewable structured resume draft from stored resume text. The candidate saves confirmed fields through the profile endpoint.
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Structured resume data and updated candidate profile
+ *         description: Structured resume data for candidate review
  *       400:
  *         description: Candidate has no uploaded resume
  *       401:

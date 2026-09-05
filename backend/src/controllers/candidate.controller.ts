@@ -68,12 +68,27 @@ export const upsertMyCandidateProfile = async (req: Request, res: Response): Pro
     }
 
     const body = req.body ?? {};
-    const { skills, experience, education, resumeUrl } = body as {
+    const { fullName, phone, skills, experience, education, resumeUrl } = body as {
+      fullName?: string;
+      phone?: string;
       skills?: unknown;
       experience?: unknown;
       education?: unknown;
       resumeUrl?: string;
     };
+
+    const normalizedFullName = typeof fullName === 'string' ? fullName.trim() : undefined;
+    const normalizedPhone = typeof phone === 'string' ? phone.trim() : undefined;
+
+    if (normalizedFullName !== undefined && normalizedFullName.length > 120) {
+      res.status(400).json({ message: 'Họ tên không được vượt quá 120 ký tự.' });
+      return;
+    }
+
+    if (normalizedPhone !== undefined && normalizedPhone.length > 30) {
+      res.status(400).json({ message: 'Số điện thoại không được vượt quá 30 ký tự.' });
+      return;
+    }
 
     const normalizedSkills = normalizeSkills(skills);
     if (normalizedSkills.length > 50 || normalizedSkills.some((skill) => skill.length > 100)) {
@@ -92,7 +107,7 @@ export const upsertMyCandidateProfile = async (req: Request, res: Response): Pro
     const profile = await prisma.candidateProfile.upsert({
       where: { userId },
       update: {
-        skills: normalizedSkills.length > 0 ? normalizedSkills : undefined,
+        skills: skills === undefined ? undefined : normalizedSkills,
         experience: safeExperience,
         education: safeEducation,
         resumeUrl: resumeUrl ?? undefined,
@@ -116,9 +131,28 @@ export const upsertMyCandidateProfile = async (req: Request, res: Response): Pro
       },
     });
 
+    if (normalizedFullName !== undefined || normalizedPhone !== undefined) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          fullName: normalizedFullName,
+          phone: normalizedPhone,
+        },
+      });
+    }
+
+    const profileWithUser = await prisma.candidateProfile.findUnique({
+      where: { userId },
+      include: {
+        user: {
+          select: { fullName: true, email: true, phone: true, avatar: true },
+        },
+      },
+    });
+
     res.status(existingProfile ? 200 : 201).json({
       message: existingProfile ? 'Cập nhật hồ sơ ứng viên thành công.' : 'Tạo hồ sơ ứng viên thành công.',
-      profile,
+      profile: profileWithUser ?? profile,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -180,21 +214,7 @@ export const parseResume = async (req: Request, res: Response): Promise<void> =>
     }
 
     const parsedResume = await parseResumeWithAI(profile.resumeText);
-    const updatedProfile = await prisma.candidateProfile.update({
-      where: { userId },
-      data: {
-        skills: parsedResume.skills,
-        experience: {
-          years: parsedResume.experienceYears,
-          position: parsedResume.position,
-          summary: parsedResume.summary,
-        },
-        education: parsedResume.education ? { summary: parsedResume.education } : undefined,
-      },
-      select: { id: true, userId: true, skills: true, experience: true, education: true, resumeUrl: true },
-    });
-
-    res.status(200).json({ message: 'Phân tích CV thành công.', parsedResume, profile: updatedProfile });
+    res.status(200).json({ message: 'Phân tích CV thành công. Hãy kiểm tra và lưu thông tin.', parsedResume });
   } catch (error: unknown) {
     const err = error as Error;
     const status = err.message.includes('AI_API_KEY') ? 503 : 502;
