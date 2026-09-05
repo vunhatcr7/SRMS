@@ -129,6 +129,73 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+export const getMyApplications = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Vui lòng đăng nhập bằng tài khoản ứng viên.' });
+      return;
+    }
+
+    const applications = await prisma.application.findMany({
+      where: { candidateProfile: { userId } },
+      include: {
+        job: {
+          include: { company: { select: { name: true, logo: true, website: true } } },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.status(200).json(applications);
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Lỗi server khi lấy danh sách đơn ứng tuyển.', error: err.message });
+  }
+};
+
+export const getMyApplicationById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+    const applicationId = Array.isArray(req.params.applicationId)
+      ? req.params.applicationId[0].trim()
+      : req.params.applicationId?.trim();
+
+    if (!userId) {
+      res.status(401).json({ message: 'Vui lòng đăng nhập bằng tài khoản ứng viên.' });
+      return;
+    }
+
+    if (!applicationId) {
+      res.status(400).json({ message: 'Thiếu applicationId.' });
+      return;
+    }
+
+    const application = await prisma.application.findFirst({
+      where: {
+        id: applicationId,
+        candidateProfile: { userId },
+      },
+      include: {
+        job: {
+          include: { company: { select: { name: true, logo: true, website: true } } },
+        },
+      },
+    });
+
+    if (!application) {
+      res.status(404).json({ message: 'Không tìm thấy đơn ứng tuyển.' });
+      return;
+    }
+
+    res.status(200).json(application);
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Lỗi server khi lấy chi tiết đơn ứng tuyển.', error: err.message });
+  }
+};
+
 export const getRecruiterApplications = async (req: Request, res: Response): Promise<void> => {
   try {
     const requesterId = (req as any).user?.id;

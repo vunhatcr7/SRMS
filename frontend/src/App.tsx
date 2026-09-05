@@ -5,9 +5,11 @@ import JobList from './pages/Job/JobList';
 import RecruiterDashboard from './pages/Job/RecruiterDashboard';
 import MainLayout from './components/Layouts/MainLayout'; 
 import CandidateLayout from './components/Layouts/CandidateLayout';
-import AIMatching from './pages/Candidate/AIMatching';
+import CandidateDashboard from './pages/Candidate/CandidateDashboard';
 import CandidateJobs from './pages/Candidate/CandidateJobs';
 import CandidateJobDetail from './pages/Candidate/CandidateJobDetail';
+import CandidateApplications from './pages/Candidate/CandidateApplications';
+import CandidateApplicationDetail from './pages/Candidate/CandidateApplicationDetail';
 import CandidateProfile from './pages/Candidate/CandidateProfile';
 import CandidateDetail from './pages/Candidate/CandidateDetail';
 import AIRanking from './pages/Job/AIRanking';
@@ -27,11 +29,11 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         {/* Candidate application */}
-        <Route path="/candidate" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><AIMatching /></CandidateLayout></RouteGuard>} />
+        <Route path="/candidate" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateDashboard /></CandidateLayout></RouteGuard>} />
         <Route path="/candidate/jobs" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateJobs /></CandidateLayout></RouteGuard>} />
         <Route path="/candidate/jobs/:jobId" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateJobDetail /></CandidateLayout></RouteGuard>} />
-        <Route path="/candidate/applications" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><PlaceholderPage title="Applications" description="Your submitted applications will appear here." /></CandidateLayout></RouteGuard>} />
-        <Route path="/candidate/applications/:applicationId" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><PlaceholderPage title="Application details" description="Application details will be available here." /></CandidateLayout></RouteGuard>} />
+        <Route path="/candidate/applications" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateApplications /></CandidateLayout></RouteGuard>} />
+        <Route path="/candidate/applications/:applicationId" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateApplicationDetail /></CandidateLayout></RouteGuard>} />
         <Route path="/candidate/interviews" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><PlaceholderPage title="Interviews" description="Your scheduled interviews will appear here." /></CandidateLayout></RouteGuard>} />
         <Route path="/candidate/profile" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateProfile /></CandidateLayout></RouteGuard>} />
 

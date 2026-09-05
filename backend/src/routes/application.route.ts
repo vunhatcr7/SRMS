@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { applyJob, getMyApplicationForJob, getRankedApplicationsByJob, getRecruiterApplications, updateApplicationStage } from '../controllers/application.controller';
+import { applyJob, getMyApplicationById, getMyApplicationForJob, getMyApplications, getRankedApplicationsByJob, getRecruiterApplications, updateApplicationStage } from '../controllers/application.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -50,6 +50,8 @@ const router = Router();
 router.post('/apply', requireAuth, rolesAllowed('CANDIDATE'), applyJob);
 
 router.get('/status/:jobId', requireAuth, rolesAllowed('CANDIDATE'), getMyApplicationForJob);
+router.get('/my', requireAuth, rolesAllowed('CANDIDATE'), getMyApplications);
+router.get('/my/:applicationId', requireAuth, rolesAllowed('CANDIDATE'), getMyApplicationById);
 
 /**
  * @swagger
