@@ -219,7 +219,7 @@ export const getRecruiterApplications = async (req: Request, res: Response): Pro
         candidateProfile: {
           include: {
             user: {
-              select: { fullName: true, email: true, phone: true, avatar: true },
+              select: { id: true, fullName: true, email: true, phone: true, avatar: true },
             },
           },
         },
