@@ -3,6 +3,9 @@ import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import JobList from './pages/Job/JobList';
 import RecruiterDashboard from './pages/Job/RecruiterDashboard';
+import RecruiterJobs from './pages/Job/RecruiterJobs';
+import RecruiterJobDetail from './pages/Job/RecruiterJobDetail';
+import RecruiterJobForm from './pages/Job/RecruiterJobForm';
 import MainLayout from './components/Layouts/MainLayout'; 
 import CandidateLayout from './components/Layouts/CandidateLayout';
 import CandidateDashboard from './pages/Candidate/CandidateDashboard';
@@ -39,10 +42,11 @@ function App() {
 
         {/* Recruiter application */}
         <Route path="/recruiter" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterDashboard /></MainLayout></RouteGuard>} />
-        <Route path="/recruiter/jobs" element={<RouteGuard roles={['RECRUITER']}><MainLayout><JobList /></MainLayout></RouteGuard>} />
-        <Route path="/recruiter/jobs/create" element={<RouteGuard roles={['RECRUITER']}><Navigate to="/recruiter?createJob=1" replace /></RouteGuard>} />
+        <Route path="/recruiter/jobs" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobs /></MainLayout></RouteGuard>} />
+        <Route path="/recruiter/jobs/create" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobForm /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs/:jobId/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><AIRanking /></MainLayout></RouteGuard>} />
-        <Route path="/recruiter/jobs/:jobId" element={<RouteGuard roles={['RECRUITER']}><MainLayout><PlaceholderPage title="Job details" description="Job details will be available here." /></MainLayout></RouteGuard>} />
+        <Route path="/recruiter/jobs/:jobId/edit" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobForm /></MainLayout></RouteGuard>} />
+        <Route path="/recruiter/jobs/:jobId" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobDetail /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><PlaceholderPage title="Candidates" description="Candidate management will be available here." /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/candidates/:candidateId" element={<RouteGuard roles={['RECRUITER']}><MainLayout><CandidateDetail /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/pipeline" element={<RouteGuard roles={['RECRUITER']}><MainLayout><PlaceholderPage title="Pipeline" description="The recruitment pipeline will be available here." /></MainLayout></RouteGuard>} />

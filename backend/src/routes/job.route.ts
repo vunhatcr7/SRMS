@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createJob, getAllJobs, getJobById, getRecommendedJobs } from '../controllers/job.controller';
+import { createJob, getAllJobs, getJobById, getManagedJobById, getManagedJobs, getRecommendedJobs, toggleManagedJob, updateManagedJob } from '../controllers/job.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -39,9 +39,6 @@ const router = Router();
  *               salaryRange:
  *                 type: string
  *                 example: "8M - 12M"
- *               benefits:
- *                 type: string
- *                 example: "Bảo hiểm đầy đủ, lương tháng 13, hybrid remote"
  *               location:
  *                 type: string
  *                 example: "Ho Chi Minh City"
@@ -59,6 +56,10 @@ const router = Router();
  *         description: Server error
  */
 router.post('/create', requireAuth, rolesAllowed('RECRUITER', 'ADMIN'), createJob);
+router.get('/manage', requireAuth, rolesAllowed('RECRUITER', 'ADMIN'), getManagedJobs);
+router.get('/manage/:jobId', requireAuth, rolesAllowed('RECRUITER', 'ADMIN'), getManagedJobById);
+router.put('/manage/:jobId', requireAuth, rolesAllowed('RECRUITER', 'ADMIN'), updateManagedJob);
+router.patch('/manage/:jobId/toggle', requireAuth, rolesAllowed('RECRUITER', 'ADMIN'), toggleManagedJob);
 
 /**
  * @swagger
