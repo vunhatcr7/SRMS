@@ -14,8 +14,9 @@ import CandidateJobDetail from './pages/Candidate/CandidateJobDetail';
 import CandidateApplications from './pages/Candidate/CandidateApplications';
 import CandidateApplicationDetail from './pages/Candidate/CandidateApplicationDetail';
 import CandidateProfile from './pages/Candidate/CandidateProfile';
-import CandidateDetail from './pages/Candidate/CandidateDetail';
 import AIRanking from './pages/Job/AIRanking';
+import RecruiterCandidates from './pages/Job/RecruiterCandidates';
+import RecruiterCandidateDetail from './pages/Job/RecruiterCandidateDetail';
 import NotFound from './pages/NotFound';
 import PlaceholderPage from './pages/PlaceholderPage';
 import RouteGuard from './components/RouteGuard';
@@ -47,8 +48,8 @@ function App() {
         <Route path="/recruiter/jobs/:jobId/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><AIRanking /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs/:jobId/edit" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobForm /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs/:jobId" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobDetail /></MainLayout></RouteGuard>} />
-        <Route path="/recruiter/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><PlaceholderPage title="Candidates" description="Candidate management will be available here." /></MainLayout></RouteGuard>} />
-        <Route path="/recruiter/candidates/:candidateId" element={<RouteGuard roles={['RECRUITER']}><MainLayout><CandidateDetail /></MainLayout></RouteGuard>} />
+        <Route path="/recruiter/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterCandidates /></MainLayout></RouteGuard>} />
+        <Route path="/recruiter/candidates/:candidateId" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterCandidateDetail /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/pipeline" element={<RouteGuard roles={['RECRUITER']}><MainLayout><PlaceholderPage title="Pipeline" description="The recruitment pipeline will be available here." /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/interviews" element={<RouteGuard roles={['RECRUITER']}><MainLayout><PlaceholderPage title="Interviews" description="Recruiter interviews will be available here." /></MainLayout></RouteGuard>} />
 
