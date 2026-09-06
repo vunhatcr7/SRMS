@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { applyJob, getMyApplicationById, getMyApplicationForJob, getMyApplications, getRankedApplicationsByJob, getRecruiterApplications, updateApplicationStage } from '../controllers/application.controller';
+import { applyJob, getMyApplicationById, getMyApplicationForJob, getMyApplications, getRankedApplicationsByJob, getRecruiterApplicationById, getRecruiterApplications, getRecruiterApplicationsByCandidate, updateApplicationStage } from '../controllers/application.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -100,6 +100,8 @@ router.get('/my/:applicationId', requireAuth, rolesAllowed('CANDIDATE'), getMyAp
  *         description: Server error
  */
 router.get('/recruiter', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplications);
+router.get('/recruiter/candidate/:candidateId', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplicationsByCandidate);
+router.get('/recruiter/:applicationId', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplicationById);
 
 /**
  * @swagger

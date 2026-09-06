@@ -1,0 +1,30 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowDownUp, BriefcaseBusiness, Eye, RefreshCw, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import api from '../../api/axios';
+import { formatDate, getScoreColor, getStageColor, getStageLabel } from '../../utils/formatters';
+
+interface Application { id: string; stage: string; matchingScore: number; createdAt: string; job: { id: string; title: string; location: string; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { position?: string }; user: { id: string; fullName?: string; email: string } } }
+
+export default function RecruiterCandidates() {
+  const navigate = useNavigate();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [jobFilter, setJobFilter] = useState('all');
+  const [stageFilter, setStageFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [sortByScore, setSortByScore] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    api.get('/application/recruiter').then((response) => { if (active) setApplications(Array.isArray(response.data) ? response.data : []); }).catch(() => { if (active) setError('Không thể tải danh sách ứng viên.'); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const jobs = useMemo(() => Array.from(new Map(applications.map((item) => [item.job.id, item.job])).values()), [applications]);
+  const filtered = useMemo(() => applications.filter((item) => { const name = item.candidateProfile.user.fullName || item.candidateProfile.user.email; return (jobFilter === 'all' || item.job.id === jobFilter) && (stageFilter === 'all' || item.stage === stageFilter) && name.toLowerCase().includes(search.toLowerCase()); }).sort((left, right) => sortByScore ? right.matchingScore - left.matchingScore : new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()), [applications, jobFilter, stageFilter, search, sortByScore]);
+
+  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-blue-500" />Đang tải ứng viên...</div>;
+  return <div className="space-y-6"><header><p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-500">Recruiter workspace</p><h1 className="mt-2 text-3xl font-black text-slate-900">Candidates</h1><p className="mt-2 text-sm text-slate-600">Review candidates who applied to jobs you manage.</p></header>{error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>}<section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_180px_180px_auto]"><label className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search candidate" className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm" /></label><select value={jobFilter} onChange={(event) => setJobFilter(event.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm"><option value="all">All jobs</option>{jobs.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}</select><select value={stageFilter} onChange={(event) => setStageFilter(event.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm"><option value="all">All stages</option>{['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED'].map((stage) => <option key={stage} value={stage}>{getStageLabel(stage)}</option>)}</select><button type="button" onClick={() => setSortByScore((current) => !current)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-700"><ArrowDownUp className="h-4 w-4" />{sortByScore ? 'Score: high to low' : 'Newest first'}</button></section>{!error && filtered.length === 0 && <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center"><BriefcaseBusiness className="mx-auto h-9 w-9 text-slate-400" /><p className="mt-3 font-semibold text-slate-700">No candidates match the filters.</p></div>}<div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"><table className="min-w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Candidate</th><th className="px-5 py-3">Job</th><th className="px-5 py-3">Applied</th><th className="px-5 py-3">Stage</th><th className="px-5 py-3">Match</th><th className="px-5 py-3">Action</th></tr></thead><tbody>{filtered.map((item) => <tr key={item.id} className="border-t border-slate-100"><td className="px-5 py-4"><p className="font-semibold text-slate-900">{item.candidateProfile.user.fullName || 'Unnamed candidate'}</p><p className="mt-1 text-xs text-slate-500">{item.candidateProfile.experience?.position || item.candidateProfile.user.email}</p><p className="mt-1 max-w-xs truncate text-xs text-slate-400">{item.candidateProfile.skills.join(', ') || 'No skills listed'}</p></td><td className="px-5 py-4 text-slate-600">{item.job.title}</td><td className="px-5 py-4 text-slate-500">{formatDate(item.createdAt)}</td><td className="px-5 py-4"><span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getStageColor(item.stage)}`}>{getStageLabel(item.stage)}</span></td><td className={`px-5 py-4 font-bold ${getScoreColor(item.matchingScore)}`}>{Math.round(item.matchingScore)}%</td><td className="px-5 py-4"><button type="button" onClick={() => navigate(`/recruiter/candidates/${item.candidateProfile.user.id}`)} className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600"><Eye className="h-4 w-4" />View</button></td></tr>)}</tbody></table></div></div>;
+}

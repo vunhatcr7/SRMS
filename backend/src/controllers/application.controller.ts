@@ -214,12 +214,12 @@ export const getRecruiterApplications = async (req: Request, res: Response): Pro
       where,
       include: {
         job: {
-          select: { title: true, location: true },
+          include: { company: { select: { name: true, logo: true } } },
         },
         candidateProfile: {
           include: {
             user: {
-              select: { fullName: true, email: true, phone: true, avatar: true },
+              select: { id: true, fullName: true, email: true, phone: true, avatar: true },
             },
           },
         },
@@ -231,6 +231,77 @@ export const getRecruiterApplications = async (req: Request, res: Response): Pro
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: 'Loi server khi lay danh sach don ung tuyen.', error: err.message });
+  }
+};
+
+export const getRecruiterApplicationById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const requesterId = (req as any).user?.id;
+    const requesterRole = (req as any).user?.role;
+    const applicationId = Array.isArray(req.params.applicationId) ? req.params.applicationId[0].trim() : req.params.applicationId?.trim();
+
+    if (!requesterId || !requesterRole) {
+      res.status(401).json({ message: 'Vui lòng đăng nhập.' });
+      return;
+    }
+
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: {
+        job: { include: { company: { select: { name: true, logo: true, website: true } } } },
+        candidateProfile: { include: { user: { select: { id: true, fullName: true, email: true, phone: true, avatar: true } } } },
+      },
+    });
+
+    if (!application) {
+      res.status(404).json({ message: 'Không tìm thấy đơn ứng tuyển.' });
+      return;
+    }
+
+    if (requesterRole === 'RECRUITER' && application.job.recruiterId !== requesterId) {
+      res.status(403).json({ message: 'Bạn không có quyền xem đơn ứng tuyển này.' });
+      return;
+    }
+
+    res.status(200).json(application);
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Lỗi server khi lấy đơn ứng tuyển.', error: err.message });
+  }
+};
+
+export const getRecruiterApplicationsByCandidate = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const requesterId = (req as any).user?.id;
+    const requesterRole = (req as any).user?.role;
+    const candidateUserId = Array.isArray(req.params.candidateId) ? req.params.candidateId[0].trim() : req.params.candidateId?.trim();
+
+    if (!requesterId || !requesterRole) {
+      res.status(401).json({ message: 'Vui lòng đăng nhập.' });
+      return;
+    }
+
+    const applications = await prisma.application.findMany({
+      where: {
+        candidateProfile: { userId: candidateUserId },
+        ...(requesterRole === 'RECRUITER' ? { job: { recruiterId: requesterId } } : {}),
+      },
+      include: {
+        job: { include: { company: { select: { name: true, logo: true, website: true } } } },
+        candidateProfile: { include: { user: { select: { id: true, fullName: true, email: true, phone: true, avatar: true } } } },
+      },
+      orderBy: { matchingScore: 'desc' },
+    });
+
+    if (applications.length === 0) {
+      res.status(404).json({ message: 'Không tìm thấy ứng viên trong các công việc bạn quản lý.' });
+      return;
+    }
+
+    res.status(200).json(applications);
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Lỗi server khi lấy hồ sơ ứng viên.', error: err.message });
   }
 };
 
