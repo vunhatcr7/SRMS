@@ -9,7 +9,6 @@ import {
   Building2,
   FileText,
   ClipboardList,
-  Gift,
   X,
 } from 'lucide-react';
 import api from '../api/axios';
@@ -22,7 +21,6 @@ interface FormData {
   salaryRange: string;
   description: string;
   requirements: string;
-  benefits: string;
 }
 
 const INITIAL_FORM: FormData = {
@@ -32,7 +30,6 @@ const INITIAL_FORM: FormData = {
   salaryRange: '',
   description: '',
   requirements: '',
-  benefits: '',
 };
 
 interface CreateJobModalProps {
@@ -287,24 +284,6 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
               </p>
             </div>
 
-            <div>
-              <label className={`mb-1.5 flex items-center gap-1.5 text-sm font-semibold ${isDarkTheme ? 'text-slate-200' : 'text-slate-700'}`}>
-                <Gift className={`h-3.5 w-3.5 ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`} />
-                Quyền lợi cho ứng viên
-              </label>
-              <textarea
-                name="benefits"
-                rows={3}
-                value={formData.benefits}
-                onChange={handleChange}
-                placeholder="Ví dụ: Bảo hiểm đầy đủ, 13th month salary, remote hybrid, đào tạo nội bộ..."
-                className={`w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none placeholder:text-slate-500 focus:ring-2 ${
-                  isDarkTheme
-                    ? 'border-[#3b4e68] bg-[#0d1a2a] text-slate-100 focus:border-[#6ca5ff] focus:ring-[#5ea4ff]/20'
-                    : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-blue-500 focus:ring-blue-200'
-                }`}
-              />
-            </div>
           </div>
 
           <div className={`flex gap-3 border-t px-5 py-3 ${isDarkTheme ? 'border-[#2c3d56] bg-[#101d30]' : 'border-slate-200 bg-slate-50'}`}>
