@@ -18,6 +18,8 @@ import AIRanking from './pages/Job/AIRanking';
 import RecruiterCandidates from './pages/Job/RecruiterCandidates';
 import RecruiterCandidateDetail from './pages/Job/RecruiterCandidateDetail';
 import RecruiterPipeline from './pages/Job/RecruiterPipeline';
+import RecruiterInterviews from './pages/Job/RecruiterInterviews';
+import CandidateInterviews from './pages/Candidate/CandidateInterviews';
 import NotFound from './pages/NotFound';
 import PlaceholderPage from './pages/PlaceholderPage';
 import RouteGuard from './components/RouteGuard';
@@ -39,7 +41,7 @@ function App() {
         <Route path="/candidate/jobs/:jobId" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateJobDetail /></CandidateLayout></RouteGuard>} />
         <Route path="/candidate/applications" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateApplications /></CandidateLayout></RouteGuard>} />
         <Route path="/candidate/applications/:applicationId" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateApplicationDetail /></CandidateLayout></RouteGuard>} />
-        <Route path="/candidate/interviews" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><PlaceholderPage title="Interviews" description="Your scheduled interviews will appear here." /></CandidateLayout></RouteGuard>} />
+        <Route path="/candidate/interviews" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateInterviews /></CandidateLayout></RouteGuard>} />
         <Route path="/candidate/profile" element={<RouteGuard roles={['CANDIDATE']}><CandidateLayout><CandidateProfile /></CandidateLayout></RouteGuard>} />
 
         {/* Recruiter application */}
@@ -52,7 +54,7 @@ function App() {
         <Route path="/recruiter/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterCandidates /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/candidates/:candidateId" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterCandidateDetail /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/pipeline" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterPipeline /></MainLayout></RouteGuard>} />
-        <Route path="/recruiter/interviews" element={<RouteGuard roles={['RECRUITER']}><MainLayout><PlaceholderPage title="Interviews" description="Recruiter interviews will be available here." /></MainLayout></RouteGuard>} />
+        <Route path="/recruiter/interviews" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterInterviews /></MainLayout></RouteGuard>} />
 
         {/* Admin application */}
         <Route path="/admin" element={<RouteGuard roles={['ADMIN']}><MainLayout><PlaceholderPage title="Admin dashboard" description="System metrics will be available here." /></MainLayout></RouteGuard>} />

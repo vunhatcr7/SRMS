@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Briefcase, 
   Calendar, 
+  CalendarPlus,
   Eye, 
   Filter, 
   GripVertical, 
@@ -14,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { formatDate, getErrorMessage, getInitials, getStageLabel } from '../../utils/formatters';
 import ScoreBadge from '../../components/ui/ScoreBadge';
+import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
 
 interface Application {
   id: string;
@@ -80,6 +82,13 @@ export default function RecruiterPipeline() {
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Schedule Interview Modal state
+  const [scheduleModalApp, setScheduleModalApp] = useState<{
+    applicationId: string;
+    candidateName: string;
+    jobTitle: string;
+  } | null>(null);
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -475,6 +484,25 @@ export default function RecruiterPipeline() {
                             )}
                           </div>
 
+                          {/* Schedule Interview Button if in INTERVIEW stage */}
+                          {app.stage === 'INTERVIEW' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setScheduleModalApp({
+                                  applicationId: app.id,
+                                  candidateName: fullName,
+                                  jobTitle: app.job?.title || '',
+                                });
+                              }}
+                              className="w-full mb-2.5 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 border border-amber-200 py-1.5 text-[11px] font-bold text-amber-800 hover:bg-amber-100 transition shadow-sm"
+                            >
+                              <CalendarPlus className="h-3.5 w-3.5 text-amber-600" />
+                              <span>Lên lịch phỏng vấn</span>
+                            </button>
+                          )}
+
                           {/* Action Footer */}
                           <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
                             {/* Quick Stage Select for Accessibility/Alternative to Drag */}
@@ -514,6 +542,24 @@ export default function RecruiterPipeline() {
           })}
         </div>
       </div>
+
+      {/* Schedule Interview Modal */}
+      {scheduleModalApp && (
+        <ScheduleInterviewModal
+          isOpen={Boolean(scheduleModalApp)}
+          onClose={() => setScheduleModalApp(null)}
+          applicationId={scheduleModalApp.applicationId}
+          candidateName={scheduleModalApp.candidateName}
+          jobTitle={scheduleModalApp.jobTitle}
+          onSuccess={() => {
+            setToast({
+              message: `Đã tạo lịch phỏng vấn cho ${scheduleModalApp.candidateName}`,
+              type: 'success',
+            });
+            setScheduleModalApp(null);
+          }}
+        />
+      )}
     </div>
   );
 }

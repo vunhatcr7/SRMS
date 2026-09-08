@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import prisma from '../config/db';
 
+const VALID_INTERVIEW_STATUSES = ['SCHEDULED', 'COMPLETED', 'CANCELLED'];
+
 const getApplication = async (applicationId: string) => {
   return prisma.application.findUnique({
     where: { id: applicationId },
-    include: { job: true },
+    include: { job: true, candidateProfile: true },
   });
 };
 
@@ -28,7 +30,7 @@ export const createInterview = async (req: Request, res: Response): Promise<void
   try {
     const userId = (req as any).user?.id;
     const userRole = (req as any).user?.role;
-    const { applicationId, scheduledAt, locationOrLink, interviewerName } = req.body ?? {};
+    const { applicationId, scheduledAt, locationOrLink, interviewerName, type, notes } = req.body ?? {};
     const safeApplicationId = typeof applicationId === 'string'
       ? applicationId.trim()
       : Array.isArray(applicationId)
@@ -67,12 +69,18 @@ export const createInterview = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    const safeType = typeof type === 'string' && type.trim() ? type.trim() : 'ONLINE';
+    const safeNotes = typeof notes === 'string' && notes.trim() ? notes.trim() : null;
+
     const interview = await prisma.interview.create({
       data: {
         applicationId: safeApplicationId,
         scheduledAt: scheduledDate,
         locationOrLink: safeLocationOrLink,
         interviewerName: safeInterviewerName,
+        status: 'SCHEDULED',
+        type: safeType,
+        notes: safeNotes,
       },
     });
 
@@ -80,6 +88,95 @@ export const createInterview = async (req: Request, res: Response): Promise<void
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: 'Loi server khi tao lich phong van.', error: err.message });
+  }
+};
+
+export const getRecruiterInterviews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
+    const { status, jobId } = req.query ?? {};
+
+    if (!userId || !userRole) {
+      res.status(401).json({ message: 'Vui long dang nhap.' });
+      return;
+    }
+
+    const where: any = {};
+    if (userRole === 'RECRUITER') {
+      where.application = { job: { recruiterId: userId } };
+    }
+
+    if (typeof jobId === 'string' && jobId.trim() && jobId !== 'all') {
+      where.application = {
+        ...(where.application || {}),
+        jobId: jobId.trim(),
+      };
+    }
+
+    if (typeof status === 'string' && status.trim() && status !== 'all') {
+      where.status = status.trim().toUpperCase();
+    }
+
+    const interviews = await prisma.interview.findMany({
+      where,
+      include: {
+        application: {
+          include: {
+            job: {
+              include: { company: { select: { name: true, logo: true } } },
+            },
+            candidateProfile: {
+              include: {
+                user: {
+                  select: { id: true, fullName: true, email: true, phone: true, avatar: true },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+
+    res.status(200).json(interviews);
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Loi server khi lay danh sach phong van recruiter.', error: err.message });
+  }
+};
+
+export const getCandidateInterviews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Vui long dang nhap.' });
+      return;
+    }
+
+    const interviews = await prisma.interview.findMany({
+      where: {
+        application: {
+          candidateProfile: { userId },
+        },
+      },
+      include: {
+        application: {
+          include: {
+            job: {
+              include: { company: { select: { name: true, logo: true } } },
+            },
+          },
+        },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+
+    res.status(200).json(interviews);
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Loi server khi lay danh sach phong van candidate.', error: err.message });
   }
 };
 
@@ -107,7 +204,10 @@ export const getInterviewsByApplication = async (req: Request, res: Response): P
       return;
     }
 
-    if (!canManageApplication(userId, userRole, application)) {
+    const isRecruiterManager = canManageApplication(userId, userRole, application);
+    const isCandidateOwner = userRole === 'CANDIDATE' && application.candidateProfile?.userId === userId;
+
+    if (!isRecruiterManager && !isCandidateOwner) {
       res.status(403).json({ message: 'Ban khong co quyen xem lich phong van cua don nay.' });
       return;
     }
@@ -124,12 +224,60 @@ export const getInterviewsByApplication = async (req: Request, res: Response): P
   }
 };
 
+export const getInterviewById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
+    const interviewId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    if (!userId || !userRole || !interviewId) {
+      res.status(401).json({ message: 'Vui long dang nhap.' });
+      return;
+    }
+
+    const interview = await prisma.interview.findUnique({
+      where: { id: interviewId },
+      include: {
+        application: {
+          include: {
+            job: { include: { company: { select: { name: true, logo: true } } } },
+            candidateProfile: {
+              include: {
+                user: { select: { id: true, fullName: true, email: true, phone: true, avatar: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!interview) {
+      res.status(404).json({ message: 'Khong tim thay lich phong van.' });
+      return;
+    }
+
+    const isRecruiterOwner = userRole === 'RECRUITER' && interview.application.job.recruiterId === userId;
+    const isCandidateOwner = userRole === 'CANDIDATE' && interview.application.candidateProfile.userId === userId;
+    const isAdminOrManager = userRole === 'ADMIN' || userRole === 'MANAGER';
+
+    if (!isRecruiterOwner && !isCandidateOwner && !isAdminOrManager) {
+      res.status(403).json({ message: 'Ban khong co quyen xem lich phong van nay.' });
+      return;
+    }
+
+    res.status(200).json(interview);
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Loi server khi lay chi tiet phong van.', error: err.message });
+  }
+};
+
 export const updateInterview = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user?.id;
     const userRole = (req as any).user?.role;
     const interviewId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { scheduledAt, locationOrLink, interviewerName } = req.body ?? {};
+    const { scheduledAt, locationOrLink, interviewerName, status, type, notes } = req.body ?? {};
 
     if (!userId || !userRole || !interviewId) {
       res.status(401).json({ message: 'Vui long dang nhap.' });
@@ -172,12 +320,20 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    if (status !== undefined && (!VALID_INTERVIEW_STATUSES.includes(status.trim().toUpperCase()))) {
+      res.status(400).json({ message: `status khong hop le. Chi chap nhan: ${VALID_INTERVIEW_STATUSES.join(', ')}` });
+      return;
+    }
+
     const updatedInterview = await prisma.interview.update({
       where: { id: interviewId },
       data: {
         scheduledAt: scheduledDate,
-        locationOrLink: locationOrLink ?? undefined,
-        interviewerName: interviewerName ?? undefined,
+        locationOrLink: locationOrLink ? locationOrLink.trim() : undefined,
+        interviewerName: interviewerName ? interviewerName.trim() : undefined,
+        status: status ? status.trim().toUpperCase() : undefined,
+        type: type !== undefined ? (typeof type === 'string' && type.trim() ? type.trim() : 'ONLINE') : undefined,
+        notes: notes !== undefined ? (typeof notes === 'string' && notes.trim() ? notes.trim() : null) : undefined,
       },
     });
 
@@ -185,5 +341,47 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: 'Loi server khi cap nhat lich phong van.', error: err.message });
+  }
+};
+
+export const cancelInterview = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
+    const interviewId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    if (!userId || !userRole || !interviewId) {
+      res.status(401).json({ message: 'Vui long dang nhap.' });
+      return;
+    }
+
+    const interview = await prisma.interview.findUnique({
+      where: { id: interviewId },
+      include: { application: { include: { job: true } } },
+    });
+
+    if (!interview) {
+      res.status(404).json({ message: 'Khong tim thay lich phong van.' });
+      return;
+    }
+
+    const canAccess = userRole === 'ADMIN'
+      || userRole === 'MANAGER'
+      || (userRole === 'RECRUITER' && interview.application.job.recruiterId === userId);
+
+    if (!canAccess) {
+      res.status(403).json({ message: 'Ban khong co quyen huy lich phong van nay.' });
+      return;
+    }
+
+    const cancelled = await prisma.interview.update({
+      where: { id: interviewId },
+      data: { status: 'CANCELLED' },
+    });
+
+    res.status(200).json({ message: 'Huy lich phong van thanh cong.', interview: cancelled });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: 'Loi server khi huy lich phong van.', error: err.message });
   }
 };
