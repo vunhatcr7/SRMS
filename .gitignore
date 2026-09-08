@@ -20,3 +20,9 @@ npm-debug.log*
 # OS operating system files
 .DS_Store
 Thumbs.db
+
+# Editor / tooling local config
+.cursor/
+.idea/
+.vscode/
+*.swp

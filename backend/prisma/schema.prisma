@@ -138,6 +138,9 @@ model Interview {
   scheduledAt     DateTime // Thời gian diễn ra cuộc phỏng vấn
   locationOrLink  String // Địa điểm phỏng vấn (Ví dụ: "Phòng họp 3" hoặc link Zoom/Meet)
   interviewerName String // Tên người sẽ phụ trách phỏng vấn ứng viên
+  status          String      @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  type            String?     @default("ONLINE") // ONLINE, OFFLINE
+  notes           String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
