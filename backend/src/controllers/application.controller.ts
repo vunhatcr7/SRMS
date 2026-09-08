@@ -206,9 +206,14 @@ export const getRecruiterApplications = async (req: Request, res: Response): Pro
       return;
     }
 
-    const where = requesterRole === 'RECRUITER'
+    const rawJobId = typeof req.query.jobId === 'string' ? req.query.jobId.trim() : undefined;
+    const where: Record<string, unknown> = requesterRole === 'RECRUITER'
       ? { job: { recruiterId: requesterId } }
       : {};
+
+    if (rawJobId && rawJobId !== 'all') {
+      where.jobId = rawJobId;
+    }
 
     const applications = await prisma.application.findMany({
       where,
