@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, Clock3, RefreshCw } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, CheckCircle2, Clock3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { getStageColor, getStageLabel } from '../../utils/formatters';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 interface RecentApplication { id: string; stage: string; matchingScore?: number; createdAt: string; job: { title: string; location: string; company?: { name: string } } }
 interface DashboardData { summary: { totalApplications: number; pendingApplications: number; hiredCount: number; applicationsByStage: Record<string, number> }; recentApplications: RecentApplication[] }
@@ -36,8 +37,7 @@ export default function CandidateDashboard() {
 
   if (loading) return (
     <div className="flex min-h-[320px] items-center justify-center">
-      <RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />
-      <span className="text-sm text-slate-500">Loading dashboard...</span>
+      <LoadingSpinner message="Loading dashboard..." />
     </div>
   );
   if (error || !data) return (

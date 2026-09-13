@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, FileText, Mail, Phone, RefreshCw, User } from 'lucide-react';
+import { ArrowLeft, ExternalLink, FileText, Mail, Phone, User } from 'lucide-react';
 import api from '../../api/axios';
 import { getErrorMessage, getScoreColor } from '../../utils/formatters';
 import StatusBadge from '../../components/ui/StatusBadge';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 interface Application { id: string; stage: string; matchingScore: number; skillScore: number; experienceScore: number; aiExplanation?: string | null; createdAt: string; job: { title: string; location: string; salaryRange?: string | null; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { years?: number; position?: string; summary?: string }; education?: { summary?: string; school?: string; major?: string }; resumeUrl?: string | null; user: { id: string; fullName?: string; email: string; phone?: string } } }
 
@@ -19,7 +20,11 @@ export default function RecruiterCandidateDetail() {
 
   useEffect(() => { if (!candidateId) return; let active = true; api.get(`/application/recruiter/candidate/${candidateId}`).then((response) => { if (active) setApplications(Array.isArray(response.data) ? response.data : []); }).catch((requestError) => { if (active) setError(getErrorMessage(requestError)); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [candidateId]);
 
-  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading candidate profile...</div>;
+  if (loading) return (
+    <div className="flex min-h-[320px] items-center justify-center">
+      <LoadingSpinner message="Loading..." />
+    </div>
+  );
   if (error || applications.length === 0) return <div className="space-y-4"><button type="button" onClick={() => navigate('/recruiter/candidates')} className="inline-flex items-center gap-2 text-sm font-semibold text-brand"><ArrowLeft className="h-4 w-4" />Back to candidates</button><div className={`rounded-lg border p-5 text-sm ${isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{error || 'Candidate not found in your managed jobs.'}</div></div>;
 
   const first = applications[0];

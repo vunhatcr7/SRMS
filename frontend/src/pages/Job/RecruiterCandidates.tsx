@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownUp, BriefcaseBusiness, RefreshCw, Search } from 'lucide-react';
+import { ArrowDownUp, BriefcaseBusiness, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
@@ -8,6 +8,7 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Avatar from '../../components/ui/Avatar';
 import EmptyState from '../../components/ui/EmptyState';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 interface Application { id: string; stage: string; matchingScore: number; createdAt: string; job: { id: string; title: string; location: string; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { position?: string }; user: { id: string; fullName?: string; email: string } } }
 
@@ -36,8 +37,8 @@ export default function RecruiterCandidates() {
   }).sort((left, right) => sortByScore ? right.matchingScore - left.matchingScore : new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()), [applications, jobFilter, stageFilter, search, sortByScore]);
 
   if (loading) return (
-    <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500">
-      <RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading candidates...
+    <div className="flex min-h-[320px] items-center justify-center">
+      <LoadingSpinner message="Loading candidates..." />
     </div>
   );
 

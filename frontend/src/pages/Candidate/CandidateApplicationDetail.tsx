@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { AlertCircle, ArrowLeft, Briefcase, Building2, RefreshCw, FileText } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Briefcase, Building2, FileText } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { formatDate, getErrorMessage, getScoreColor, getStageLabel } from '../../utils/formatters';
 import StatusBadge from '../../components/ui/StatusBadge';
 
@@ -38,7 +39,11 @@ export default function CandidateApplicationDetail() {
     return () => { active = false; };
   }, [applicationId]);
 
-  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading application details...</div>;
+  if (loading) return (
+    <div className="flex min-h-[320px] items-center justify-center">
+      <LoadingSpinner message="Loading..." />
+    </div>
+  );
   if (error || !application) return <div className="space-y-4"><button type="button" onClick={() => navigate('/candidate/applications')} className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light"><ArrowLeft className="h-4 w-4" />Back to applications</button><div className={`rounded-lg border p-6 text-sm ${isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}><AlertCircle className="mb-2 h-5 w-5" />{error || 'Application not found.'}</div></div>;
 
   const rejected = application.stage === 'REJECTED';

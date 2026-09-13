@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { AlertCircle, ArrowLeft, Briefcase, Building2, CheckCircle2, FileText, MapPin, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Briefcase, Building2, CheckCircle2, FileText, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { getErrorMessage } from '../../utils/formatters';
 
 interface Job {
@@ -67,7 +68,11 @@ export default function CandidateJobDetail() {
     }
   };
 
-  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading job details...</div>;
+  if (loading) return (
+    <div className="flex min-h-[320px] items-center justify-center">
+      <LoadingSpinner message="Loading..." />
+    </div>
+  );
   if (error || !job) return <div className="space-y-4"><button type="button" onClick={() => navigate('/candidate/jobs')} className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light"><ArrowLeft className="h-4 w-4" />Back to jobs</button><div className={`rounded-lg border p-6 text-sm ${isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}><AlertCircle className="mb-2 h-5 w-5" />{error || 'Job not found.'}</div></div>;
 
   return (

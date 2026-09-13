@@ -10,12 +10,12 @@ import {
   GraduationCap,
   FileText,
   ExternalLink,
-  RefreshCw,
   AlertCircle,
 } from 'lucide-react';
 import api from '../../api/axios';
 import { getErrorMessage, getInitials, formatDate } from '../../utils/formatters';
 import SkillTag from '../../components/ui/SkillTag';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 interface CandidateProfileDetail {
   id: string;
@@ -80,21 +80,18 @@ export default function CandidateDetail() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center text-slate-500">
-        <div className="flex items-center gap-3">
-          <RefreshCw className="h-5 w-5 animate-spin text-brand" />
-          <span className="text-sm font-medium">Loading candidate profile...</span>
-        </div>
+      <div className="flex h-64 items-center justify-center">
+        <LoadingSpinner message="Loading candidate profile..." />
       </div>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className={`max-w-3xl mx-auto mt-10 p-8 rounded-lg border text-center ${isDark ? 'border-rose-500/30 bg-rose-500/10' : 'border-rose-200 bg-rose-50'}`}>
-        <AlertCircle className="h-12 w-12 text-rose-400 mx-auto mb-3" />
-        <h3 className="text-lg font-bold text-slate-100 mb-1">Candidate profile not found</h3>
-        <p className="text-sm text-slate-400 mb-5">{error || 'Profile may not exist yet.'}</p>
+        <div className={`max-w-3xl mx-auto mt-10 p-8 rounded-lg border text-center ${isDark ? 'border-rose-500/30 bg-rose-500/10' : 'border-rose-200 bg-rose-50'}`}>
+          <AlertCircle className="h-12 w-12 text-rose-400 mx-auto mb-3" />
+          <h3 className={`text-lg font-bold mb-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Candidate profile not found</h3>
+          <p className={`text-sm mb-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{error || 'Profile may not exist yet.'}</p>
         <button
           onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 rounded bg-brand px-4 py-2 text-xs font-bold text-white hover:bg-brand-dark transition"
@@ -126,8 +123,8 @@ export default function CandidateDetail() {
               <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded border text-xs font-semibold mb-1 ${isDark ? 'border-navy-700 bg-navy-850 text-brand-light' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>
                 <User className="h-3 w-3" /> Candidate profile
               </div>
-              <h2 className="text-xl font-bold text-slate-100">{user.fullName || 'Unnamed'}</h2>
-              <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+              <h2 className={`text-xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{user.fullName || 'Unnamed'}</h2>
+              <div className={`mt-1.5 flex flex-wrap items-center gap-3 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{user.email}</span>
                 {user.phone && (
                   <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{user.phone}</span>
@@ -140,12 +137,16 @@ export default function CandidateDetail() {
           </div>
 
           {profile.resumeUrl && (
-            <a
-              href={profile.resumeUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded border border-navy-700 bg-navy-800 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:border-navy-600 hover:text-slate-100 shrink-0"
-            >
+              <a
+                href={profile.resumeUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={`inline-flex items-center gap-2 rounded border px-4 py-2.5 text-xs font-semibold transition hover:opacity-80 shrink-0 ${
+                  isDark
+                    ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100'
+                    : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'
+                }`}
+              >
               <FileText className="h-4 w-4 text-brand" />
               View resume
               <ExternalLink className="h-3 w-3 opacity-60" />
@@ -155,7 +156,7 @@ export default function CandidateDetail() {
       </div>
 
       <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-        <div className="flex items-center gap-2 text-sm font-bold text-slate-100 border-b border-navy-700 pb-3 mb-3">
+        <div className={`flex items-center gap-2 text-sm font-bold border-b pb-3 mb-3 ${isDark ? 'text-slate-100 border-navy-700' : 'text-slate-900 border-slate-200'}`}>
           <Briefcase className="h-4 w-4 text-brand" />
           Skills
         </div>
@@ -171,22 +172,22 @@ export default function CandidateDetail() {
       </section>
 
       <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-        <div className="flex items-center gap-2 text-sm font-bold text-slate-100 border-b border-navy-700 pb-3 mb-4">
+        <div className={`flex items-center gap-2 text-sm font-bold border-b pb-3 mb-4 ${isDark ? 'text-slate-100 border-navy-700' : 'text-slate-900 border-slate-200'}`}>
           <Briefcase className="h-4 w-4 text-brand" />
           Work experience
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div className={`p-3.5 rounded-lg border ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
-            <span className="font-semibold text-slate-500 block mb-1">Years of experience</span>
-            <span className="text-sm font-bold text-slate-200">
+            <span className={`font-semibold block mb-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Years of experience</span>
+            <span className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
               {profile.experience?.years !== undefined ? `${profile.experience.years} years` : 'Not provided'}
             </span>
           </div>
 
           <div className={`p-3.5 rounded-lg border ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
-            <span className="font-semibold text text-slate-500 block mb-1">Current / latest position</span>
-            <span className="text-sm font-bold text-slate-200">
+            <span className={`font-semibold block mb-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Current / latest position</span>
+            <span className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
               {profile.experience?.position || 'Not provided'}
             </span>
           </div>
@@ -194,26 +195,26 @@ export default function CandidateDetail() {
 
         {profile.experience?.summary && (
           <div className={`mt-4 text-xs leading-relaxed rounded-lg border p-4 ${isDark ? 'bg-navy-850 border-navy-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-            <span className="font-bold text-slate-300 block mb-1">Experience summary:</span>
+            <span className={`font-bold block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Experience summary:</span>
             {profile.experience.summary}
           </div>
         )}
       </section>
 
       <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-        <div className="flex items-center gap-2 text-sm font-bold text-slate-100 border-b border-navy-700 pb-3 mb-3">
+        <div className={`flex items-center gap-2 text-sm font-bold border-b pb-3 mb-3 ${isDark ? 'text-slate-100 border-navy-700' : 'text-slate-900 border-slate-200'}`}>
           <GraduationCap className="h-4 w-4 text-brand" />
           Education
         </div>
-        <p className="text-xs text-slate-400">
+        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
           {profile.education?.summary || 'No education information provided.'}
         </p>
       </section>
 
       {profile.resumeText && (
         <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <div className="flex items-center justify-between border-b border-navy-700 pb-3 mb-3">
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-100">
+          <div className={`flex items-center justify-between border-b pb-3 mb-3 ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
+            <div className={`flex items-center gap-2 text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               <FileText className="h-4 w-4 text-brand" />
               Extracted resume text
             </div>

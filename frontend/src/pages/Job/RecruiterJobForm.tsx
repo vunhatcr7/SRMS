@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { ArrowLeft, RefreshCw, Save } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { getErrorMessage } from '../../utils/formatters';
 
 interface FormState { title: string; companyName: string; description: string; requirements: string; salaryRange: string; location: string; isActive: boolean }
@@ -45,7 +46,11 @@ export default function RecruiterJobForm() {
     }
   };
 
-  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading job...</div>;
+  if (loading) return (
+    <div className="flex min-h-[320px] items-center justify-center">
+      <LoadingSpinner message="Loading..." />
+    </div>
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { AlertCircle, ArrowLeft, Building2, Edit3, MapPin, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Building2, Edit3, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { getErrorMessage } from '../../utils/formatters';
 
 interface Job { id: string; title: string; description: string; requirements: string; location: string; salaryRange?: string | null; isActive: boolean; createdAt: string; company?: { name: string }; _count?: { applications: number } }
@@ -35,7 +36,11 @@ export default function RecruiterJobDetail() {
     }
   };
 
-  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading job details...</div>;
+  if (loading) return (
+    <div className="flex min-h-[320px] items-center justify-center">
+      <LoadingSpinner message="Loading..." />
+    </div>
+  );
   if (!job) return <div className="space-y-4"><button type="button" onClick={() => navigate('/recruiter/jobs')} className="inline-flex items-center gap-2 text-sm font-semibold text-brand"><ArrowLeft className="h-4 w-4" />Back to jobs</button><div className={`rounded-lg border p-6 text-sm ${isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}><AlertCircle className="mb-2 h-5 w-5" />{message || 'Job not found.'}</div></div>;
 
   return (
@@ -53,8 +58,8 @@ export default function RecruiterJobDetail() {
             </div>
             <div>
               <p className={`text-sm font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.company?.name || 'Company'}</p>
-              <h1 className="mt-1 text-2xl font-bold text-slate-100">{job.title}</h1>
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-400">
+              <h1 className={`mt-1 text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{job.title}</h1>
+              <div className={`mt-3 flex flex-wrap items-center gap-4 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{job.location}</span>
                 <span className="text-emerald-400">{job.salaryRange || 'Salary not specified'}</span>
               </div>
@@ -70,19 +75,23 @@ export default function RecruiterJobDetail() {
         <button type="button" onClick={() => navigate(`/recruiter/jobs/${job.id}/edit`)} className="inline-flex items-center gap-2 rounded bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark">
           <Edit3 className="h-4 w-4" /> Edit job
         </button>
-        <button type="button" onClick={() => void toggle()} className="rounded border border-navy-700 bg-navy-800 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-navy-600 hover:text-slate-100">
+        <button type="button" onClick={() => void toggle()} className={`rounded border px-4 py-2.5 text-sm font-semibold transition ${
+          isDark
+            ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100'
+            : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'
+        }`}>
           {job.isActive ? 'Close job' : 'Publish job'}
         </button>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <h2 className="text-base font-bold text-slate-100">Description</h2>
-          <p className="mt-3 text-sm text-slate-400 leading-relaxed whitespace-pre-line">{job.description}</p>
+          <h2 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Description</h2>
+          <p className={`mt-3 text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.description}</p>
         </section>
         <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <h2 className="text-base font-bold text-slate-100">Requirements</h2>
-          <p className="mt-3 text-sm text-slate-400 leading-relaxed whitespace-pre-line">{job.requirements}</p>
+          <h2 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Requirements</h2>
+          <p className={`mt-3 text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.requirements}</p>
         </section>
       </div>
     </div>

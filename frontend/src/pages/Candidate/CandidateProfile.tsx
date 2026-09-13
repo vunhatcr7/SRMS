@@ -9,7 +9,6 @@ import {
   Mail,
   Phone,
   Plus,
-  RefreshCw,
   Save,
   Upload,
   User,
@@ -19,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { getErrorMessage, getInitials } from '../../utils/formatters';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 interface ExperienceData { years?: number; position?: string; summary?: string; }
 interface EducationData { school?: string; major?: string; summary?: string; }
@@ -217,7 +217,11 @@ export default function CandidateProfile() {
   const currentUser = profile?.user || getStoredUser();
 
   if (loading) {
-    return <div className="flex h-64 items-center justify-center text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading profile...</div>;
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <LoadingSpinner message="Loading profile..." />
+      </div>
+    );
   }
 
   return (

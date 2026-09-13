@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BriefcaseBusiness, Building2, Edit3, Eye, MapPin, RefreshCw } from 'lucide-react';
+import { BriefcaseBusiness, Building2, Edit3, Eye, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
@@ -7,6 +7,7 @@ import { formatDate } from '../../utils/formatters';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import EmptyState from '../../components/ui/EmptyState';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 interface Job { id: string; title: string; location: string; salaryRange?: string | null; isActive: boolean; createdAt: string; company?: { name: string }; _count?: { applications: number } }
 
@@ -25,8 +26,8 @@ export default function RecruiterJobs() {
   }, []);
 
   if (loading) return (
-    <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500">
-      <RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading jobs...
+    <div className="flex min-h-[320px] items-center justify-center">
+      <LoadingSpinner message="Loading jobs..." />
     </div>
   );
 
