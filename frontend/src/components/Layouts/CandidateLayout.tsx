@@ -8,7 +8,6 @@ interface CandidateLayoutProps {
 }
 
 const navigation = [
-  { label: 'Home', path: '/candidate', end: true },
   { label: 'Jobs', path: '/candidate/jobs' },
   { label: 'Applications', path: '/candidate/applications' },
   { label: 'Interviews', path: '/candidate/interviews' },
@@ -42,35 +41,47 @@ export default function CandidateLayout({ children }: CandidateLayoutProps) {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkTheme ? 'bg-[#0b1324] text-slate-100' : 'bg-slate-100 text-slate-800'}`}>
-      <header className={`sticky top-0 z-30 border-b ${isDarkTheme ? 'border-white/10 bg-[#0d1b2d]' : 'border-slate-200 bg-white'}`}>
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-6 px-5">
+    <div className={`min-h-screen transition-colors duration-200 ${isDarkTheme ? 'bg-navy-850 text-slate-100' : 'bg-slate-100 text-slate-800'}`}>
+      <header className={`sticky top-0 z-30 border-b ${isDarkTheme ? 'border-navy-700 bg-navy-900' : 'border-slate-200 bg-white'}`}>
+        <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-6 px-5">
           <button type="button" onClick={() => navigate('/candidate')} className="flex items-center gap-2 text-sm font-bold">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-600 text-xs text-white">S</span>
+            <span className="grid h-7 w-7 place-items-center rounded bg-brand text-xs text-white">S</span>
             <span className={isDarkTheme ? 'text-white' : 'text-slate-900'}>SRMS</span>
           </button>
 
-          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+          <nav className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
             {navigation.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
-                end={item.end}
-                className={({ isActive }) => `whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${isActive ? 'bg-blue-600 text-white' : isDarkTheme ? 'text-slate-300 hover:bg-white/5 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                end={item.path === '/candidate'}
+                className={({ isActive }) => `whitespace-nowrap rounded px-3 py-2 text-sm font-medium transition ${
+                  isActive
+                    ? 'bg-brand text-white'
+                    : isDarkTheme
+                      ? 'text-slate-400 hover:bg-navy-800 hover:text-slate-200'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
               >
                 {item.label}
               </NavLink>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={toggleTheme} className={`grid h-9 w-9 place-items-center rounded-lg border ${isDarkTheme ? 'border-white/10 bg-white/5 text-slate-300' : 'border-slate-200 bg-slate-100 text-slate-700'}`} aria-label="Toggle theme">
+          <div className="flex items-center gap-1.5">
+            <button type="button" onClick={toggleTheme} className={`grid h-8 w-8 place-items-center rounded border transition ${
+              isDarkTheme ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
+            }`} aria-label="Toggle theme">
               {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <button type="button" className={`grid h-9 w-9 place-items-center rounded-lg border ${isDarkTheme ? 'border-white/10 bg-white/5 text-slate-300' : 'border-slate-200 bg-slate-100 text-slate-700'}`} aria-label="Notifications">
+            <button type="button" className={`grid h-8 w-8 place-items-center rounded border transition ${
+              isDarkTheme ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
+            }`} aria-label="Notifications">
               <Bell className="h-4 w-4" />
             </button>
-            <button type="button" onClick={logout} className={`grid h-9 w-9 place-items-center rounded-lg border ${isDarkTheme ? 'border-white/10 bg-white/5 text-slate-300' : 'border-slate-200 bg-slate-100 text-slate-700'}`} aria-label="Log out">
+            <button type="button" onClick={logout} className={`grid h-8 w-8 place-items-center rounded border transition ${
+              isDarkTheme ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
+            }`} aria-label="Log out">
               <LogOut className="h-4 w-4" />
             </button>
           </div>

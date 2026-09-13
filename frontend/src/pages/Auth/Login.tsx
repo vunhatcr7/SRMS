@@ -3,18 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import AuthLayout from '../../components/Layouts/AuthLayout';
 
-interface UserInfo {
-  id: string;
-  email: string;
-  role: string;
-}
-
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [user, setUser] = useState<UserInfo | null>(null);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -27,7 +20,6 @@ export default function Login() {
       const { token, user: userData, message: resMessage } = response.data;
       localStorage.setItem('srms_token', token);
       localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
       setMessage(resMessage);
       setTimeout(() => {
         const destination = userData.role === 'CANDIDATE' ? '/candidate' : userData.role === 'ADMIN' ? '/admin' : '/recruiter';
@@ -35,7 +27,7 @@ export default function Login() {
       }, 400);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      setMessage(err.response?.data?.message || 'Đăng nhập thất bại!');
+      setMessage(err.response?.data?.message || 'Login failed.');
     } finally {
       setLoading(false);
     }
@@ -44,48 +36,51 @@ export default function Login() {
   return (
     <AuthLayout
       eyebrow="Recruitment management"
-      title="Đăng nhập SRMS"
-      description="Quản lý tuyển dụng và tìm kiếm cơ hội phù hợp."
+      title="Welcome back"
+      description="Sign in to continue to your recruitment workspace."
     >
-        {!user ? (
-          <form onSubmit={handleLogin}>
-            <div className="form-field">
-              <label htmlFor="login-email">Email</label>
-              <input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="recruiter@fpt.com" />
-            </div>
+      <form onSubmit={handleLogin}>
+        <div className="form-field">
+          <label htmlFor="login-email">Email</label>
+          <input
+            id="login-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="recruiter@company.com"
+            autoComplete="email"
+          />
+        </div>
 
-            <div className="form-field">
-              <label htmlFor="login-password">Mật khẩu</label>
-              <input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Nhập mật khẩu" />
-            </div>
+        <div className="form-field">
+          <label htmlFor="login-password">Password</label>
+          <input
+            id="login-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            placeholder="Enter your password"
+            autoComplete="current-password"
+          />
+        </div>
 
-            <button type="submit" disabled={loading} className="primary-button">
-              {loading ? 'Đang xử lý...' : 'ĐĂNG NHẬP'}
-            </button>
-          </form>
-        ) : (
-          <div className="auth-success">
-            <h2>Đăng nhập thành công</h2>
-            <div className="auth-details">
-              <p><strong>ID:</strong> {user.id}</p>
-              <p><strong>Email:</strong> {user.email}</p>
-              <p><strong>Vai trò:</strong> <span>{user.role}</span></p>
-            </div>
-            <button onClick={() => { localStorage.clear(); setUser(null); navigate('/login'); }} className="secondary-button">ĐĂNG XUẤT</button>
-          </div>
-        )}
+        <button type="submit" disabled={loading} className="primary-button">
+          {loading ? 'Signing in...' : 'Sign in'}
+        </button>
+      </form>
 
-        {!user && (
-          <p className="auth-footer">
-            Chưa có tài khoản? <button type="button" onClick={() => navigate('/register')}>Đăng ký ngay</button>
-          </p>
-        )}
+      <p className="auth-footer">
+        Don&apos;t have an account?{' '}
+        <button type="button" onClick={() => navigate('/register')}>Create account</button>
+      </p>
 
-        {message && (
-          <div className={`form-message ${message.includes('thành công') ? 'success' : 'error'}`}>
-            {message}
-          </div>
-        )}
+      {message && (
+        <div className={`form-message ${message.toLowerCase().includes('success') || message.includes('thành công') ? 'success' : 'error'}`}>
+          {message}
+        </div>
+      )}
     </AuthLayout>
   );
 }

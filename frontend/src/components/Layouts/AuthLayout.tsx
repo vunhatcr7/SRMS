@@ -11,8 +11,8 @@ export default function AuthLayout({ eyebrow, title, description, children }: Au
   return (
     <main className="auth-page">
       <section className="auth-panel" aria-labelledby="auth-title">
-        <div className="mb-7 flex items-center gap-2 text-sm font-extrabold tracking-wide text-slate-900">
-          <span className="grid h-7 w-7 place-items-center rounded-md bg-blue-600 text-xs text-white">S</span>
+        <div className="mb-7 flex items-center gap-2 text-sm font-bold tracking-wide text-slate-100">
+          <span className="grid h-7 w-7 place-items-center rounded bg-brand text-xs text-white">S</span>
           <span>SRMS</span>
         </div>
         <p className="auth-kicker">{eyebrow}</p>

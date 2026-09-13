@@ -9,6 +9,7 @@ interface Job {
   location: string;
   salaryRange?: string | null;
   description: string;
+  requirements?: string;
   createdAt: string;
   company?: { name: string };
 }
@@ -35,7 +36,7 @@ export default function CandidateJobs() {
         if (active) setJobs(Array.isArray(response.data) ? response.data : []);
       })
       .catch(() => {
-        if (active) setError('Không thể tải danh sách việc làm.');
+        if (active) setError('Unable to load jobs.');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -45,16 +46,67 @@ export default function CandidateJobs() {
 
   const isDarkTheme = theme === 'dark';
   if (loading) {
-    return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-indigo-600" />Đang tải việc làm...</div>;
+    return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading jobs...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <header><p className={`text-xs font-semibold uppercase tracking-[0.2em] ${isDarkTheme ? 'text-indigo-300' : 'text-indigo-600'}`}>Candidate workspace</p><h1 className={`mt-2 text-3xl font-black ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Find your next role</h1><p className={`mt-2 text-sm ${isDarkTheme ? 'text-slate-300' : 'text-slate-600'}`}>Browse currently active opportunities and open a role to review the full details.</p></header>
-      {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>}
-      {!error && jobs.length === 0 && <div className={`rounded-2xl border border-dashed p-12 text-center ${isDarkTheme ? 'border-white/15 bg-white/5' : 'border-slate-200 bg-white'}`}><BriefcaseBusiness className="mx-auto h-9 w-9 text-slate-400" /><h2 className={`mt-3 font-bold ${isDarkTheme ? 'text-white' : 'text-slate-800'}`}>No active jobs yet</h2><p className="mt-1 text-sm text-slate-500">Check back later for new opportunities.</p></div>}
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {jobs.map((job) => <article key={job.id} className={`flex min-h-[300px] flex-col rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 ${isDarkTheme ? 'border-white/10 bg-[#111d34] hover:border-indigo-400/60' : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md'}`}><div className="flex items-start gap-3"><div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${isDarkTheme ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}><Building2 className="h-5 w-5" /></div><div className="min-w-0"><h2 className={`truncate text-lg font-bold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{job.title}</h2><p className={`mt-1 text-sm ${isDarkTheme ? 'text-slate-300' : 'text-slate-600'}`}>{job.company?.name || 'Company'}</p></div></div><p className={`mt-4 line-clamp-3 flex-1 text-sm leading-6 ${isDarkTheme ? 'text-slate-300' : 'text-slate-600'}`}>{job.description}</p><div className={`mt-4 space-y-2 text-xs ${isDarkTheme ? 'text-slate-300' : 'text-slate-600'}`}><div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-indigo-500" />{job.location}</div><div className="flex items-center justify-between gap-2"><span className="font-semibold text-emerald-500">{job.salaryRange || 'Salary not specified'}</span><span>Posted {formatDate(job.createdAt)}</span></div></div><button type="button" onClick={() => navigate(`/candidate/jobs/${job.id}`)} className="mt-5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">View details</button></article>)}
+      <div>
+        <p className={`text-[11px] font-semibold uppercase tracking-wider ${isDarkTheme ? 'text-brand-light' : 'text-brand'}`}>Candidate workspace</p>
+        <h1 className={`mt-2 text-2xl font-bold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Find your next role</h1>
+        <p className={`mt-2 text-sm ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`}>Browse currently active opportunities.</p>
+      </div>
+
+      {error && <div className={`rounded-lg border p-4 text-sm ${isDarkTheme ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{error}</div>}
+
+      {!error && jobs.length === 0 && (
+        <div className={`rounded-lg border border-dashed p-12 text-center ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <BriefcaseBusiness className="mx-auto h-9 w-9 text-slate-500" />
+          <h2 className={`mt-3 font-bold ${isDarkTheme ? 'text-white' : 'text-slate-800'}`}>No active jobs yet</h2>
+          <p className="mt-1 text-sm text-slate-400">Check back later for new opportunities.</p>
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {jobs.map((job) => (
+          <article
+            key={job.id}
+            className={`flex min-h-[260px] flex-col rounded-lg border p-5 transition ${isDarkTheme ? 'border-navy-700 bg-navy-800 hover:border-navy-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${isDarkTheme ? 'bg-brand-muted text-brand-light' : 'bg-blue-50 text-blue-600'}`}>
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 className={`truncate text-base font-bold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{job.title}</h2>
+                <p className={`mt-1 text-sm ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`}>{job.company?.name || 'Company'}</p>
+              </div>
+            </div>
+
+            <p className={`mt-4 line-clamp-3 flex-1 text-sm leading-relaxed ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`}>
+              {job.description || job.requirements}
+            </p>
+
+            <div className={`mt-4 space-y-2 text-xs ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`}>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-brand" />
+                <span>{job.location || 'Remote'}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-emerald-400">{job.salaryRange || 'Competitive'}</span>
+                <span className={isDarkTheme ? 'text-slate-500' : 'text-slate-500'}>Posted {formatDate(job.createdAt)}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate(`/candidate/jobs/${job.id}`)}
+              className="mt-5 rounded bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark"
+            >
+              View details
+            </button>
+          </article>
+        ))}
       </div>
     </div>
   );

@@ -15,6 +15,15 @@ export default function RecruiterJobForm() {
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
+
+  useEffect(() => {
+    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
+    window.addEventListener('srms-theme-change', syncTheme);
+    return () => window.removeEventListener('srms-theme-change', syncTheme);
+  }, []);
+
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     if (!jobId) return;
@@ -41,6 +50,61 @@ export default function RecruiterJobForm() {
     }
   };
 
-  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-blue-500" />Đang tải công việc...</div>;
-  return <div className="mx-auto max-w-3xl space-y-5"><button type="button" onClick={() => navigate(editing ? `/recruiter/jobs/${jobId}` : '/recruiter/jobs')} className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"><ArrowLeft className="h-4 w-4" />Back</button><div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h1 className="text-2xl font-black text-slate-900">{editing ? 'Edit job' : 'Create job'}</h1><p className="mt-2 text-sm text-slate-500">Use the fields supported by the current Job API.</p>{message && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{message}</div>}<form onSubmit={(event) => void submit(event)} className="mt-6 space-y-4"><div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold text-slate-700 sm:col-span-2">Title<input required value={form.title} onChange={(event) => update('title', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm" /></label><label className="text-sm font-semibold text-slate-700">Company<input required disabled={editing} value={form.companyName} onChange={(event) => update('companyName', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:bg-slate-100" /></label><label className="text-sm font-semibold text-slate-700">Location<input required value={form.location} onChange={(event) => update('location', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm" /></label><label className="text-sm font-semibold text-slate-700">Salary range<input value={form.salaryRange} onChange={(event) => update('salaryRange', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm" /></label>{editing && <label className="flex items-center gap-2 self-end pb-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={form.isActive} onChange={(event) => update('isActive', event.target.checked)} />Published / active</label>}</div><label className="block text-sm font-semibold text-slate-700">Description<textarea required rows={6} value={form.description} onChange={(event) => update('description', event.target.value)} className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm" /></label><label className="block text-sm font-semibold text-slate-700">Requirements<textarea required rows={5} value={form.requirements} onChange={(event) => update('requirements', event.target.value)} className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm" /></label><button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-slate-400"><Save className="h-4 w-4" />{saving ? 'Saving...' : editing ? 'Save changes' : 'Create job'}</button></form></div></div>;
+  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading job...</div>;
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-5">
+      <button type="button" onClick={() => navigate(editing ? `/recruiter/jobs/${jobId}` : '/recruiter/jobs')} className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light transition">
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
+
+      <div className={`rounded-lg border p-6 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+        <h1 className="text-xl font-bold text-slate-100">{editing ? 'Edit job' : 'Create job'}</h1>
+        <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Use the fields supported by the current Job API.</p>
+        {message && <div className={`mt-4 rounded-lg border p-3 text-sm ${isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{message}</div>}
+
+        <form onSubmit={(event) => void submit(event)} className="mt-6 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className={`text-sm font-semibold sm:col-span-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+              Title
+              <input required value={form.title} onChange={(event) => update('title', event.target.value)} className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
+            </label>
+            <label className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+              Company
+              <input required disabled={editing} value={form.companyName} onChange={(event) => update('companyName', event.target.value)} className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
+            </label>
+            <label className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+              Location
+              <input required value={form.location} onChange={(event) => update('location', event.target.value)} className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
+            </label>
+            <label className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+              Salary range
+              <input value={form.salaryRange} onChange={(event) => update('salaryRange', event.target.value)} className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
+            </label>
+            <label className={`flex items-center gap-2 self-end pb-2.5 text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+              <input type="checkbox" checked={form.isActive} onChange={(event) => update('isActive', event.target.checked)} className="h-4 w-4 rounded border-navy-700 bg-navy-800 text-brand focus:ring-brand" />
+              Active
+            </label>
+            <label className={`text-sm font-semibold sm:col-span-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+              Description
+              <textarea required value={form.description} onChange={(event) => update('description', event.target.value)} rows={4} className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition resize-none ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
+            </label>
+            <label className={`text-sm font-semibold sm:col-span-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+              Requirements
+              <textarea required value={form.requirements} onChange={(event) => update('requirements', event.target.value)} rows={4} className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition resize-none ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
+            </label>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => navigate(editing ? `/recruiter/jobs/${jobId}` : '/recruiter/jobs')} className={`rounded border px-4 py-2.5 text-sm font-semibold transition ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:bg-navy-750' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+              Cancel
+            </button>
+            <button type="submit" disabled={saving} className="inline-flex flex-1 items-center justify-center gap-2 rounded bg-brand px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-dark disabled:opacity-60">
+              {saving ? 'Saving...' : <><Save className="h-4 w-4" /> Save job</>}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }

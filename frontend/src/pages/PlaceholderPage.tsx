@@ -15,9 +15,9 @@ export default function PlaceholderPage({ title, description }: PlaceholderPageP
   }, []);
 
   return (
-    <section className={`rounded-2xl border p-8 shadow-sm ${isDarkTheme ? 'border-white/10 bg-[#111d34]' : 'border-slate-200 bg-white'}`}>
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">SRMS</p>
-      <h1 className={`mt-2 text-2xl font-bold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{title}</h1>
+    <section className={`rounded-lg border p-6 ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">SRMS</p>
+      <h1 className={`mt-2 text-lg font-bold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{title}</h1>
       <p className={`mt-2 text-sm ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`}>{description}</p>
     </section>
   );

@@ -44,17 +44,19 @@ export default function RecruiterDashboard() {
   }, []);
 
   const overviewCards = [
-    { label: 'Open roles', value: '24', change: '+12.5% this month', tone: 'text-blue-300' },
-    { label: 'Active candidates', value: '186', change: '+8.4% this month', tone: 'text-emerald-300' },
-    { label: 'Interviews this week', value: '32', change: '+6 scheduled', tone: 'text-violet-300' },
-    { label: 'Offers pending', value: '08', change: '+2 need review', tone: 'text-amber-300' },
+    { label: 'Open roles', value: '24', change: '+12.5% this month', tone: 'text-brand-light' },
+    { label: 'Active candidates', value: '186', change: '+8.4% this month', tone: 'text-emerald-400' },
+    { label: 'Interviews this week', value: '32', change: '+6 scheduled', tone: 'text-sky-400' },
+    { label: 'Offers pending', value: '08', change: '+2 need review', tone: 'text-amber-400' },
   ];
 
   const pipelineStages = [
-    { name: 'Applied', count: 86, color: 'bg-sky-500' },
-    { name: 'Screening', count: 42, color: 'bg-indigo-500' },
-    { name: 'Interview', count: 28, color: 'bg-purple-500' },
-    { name: 'Offer', count: 12, color: 'bg-yellow-500' },
+    { name: 'Applied', count: 86 },
+    { name: 'Screening', count: 42 },
+    { name: 'Interview', count: 28 },
+    { name: 'Offer', count: 12 },
+    { name: 'Hired', count: 8 },
+    { name: 'Rejected', count: 5 },
   ];
 
   const upcomingInterviews = [
@@ -72,14 +74,18 @@ export default function RecruiterDashboard() {
 
   const isDarkTheme = theme === 'dark';
 
+  const activeUser = {
+    fullName: 'Minh',
+  };
+
   return (
-    <div className={`space-y-6 pb-8 ${isDarkTheme ? 'text-slate-100' : 'text-slate-800'}`}>
+    <div className="space-y-6 pb-8">
       {toast && (
         <div
-          className={`fixed right-5 top-5 z-50 flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-semibold shadow-lg ${
+          className={`fixed right-5 top-5 z-50 flex items-center gap-2 rounded border px-4 py-3 text-xs font-semibold shadow-card ${
             toast.isSuccess
-              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'
-              : 'border-rose-500/20 bg-rose-500/10 text-rose-200'
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+              : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
           }`}
         >
           {toast.isSuccess ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
@@ -87,31 +93,39 @@ export default function RecruiterDashboard() {
         </div>
       )}
 
-      <div className={`rounded-[20px] border p-6 shadow-2xl ${isDarkTheme ? 'border-white/10 bg-gradient-to-br from-[#111d34] via-[#121f38] to-[#0d1830] shadow-slate-950/30' : 'border-slate-200 bg-white shadow-slate-200'}`}>
+      <div className={`rounded-lg border p-6 ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
           <div className="space-y-2">
-            <p className={`text-[10px] font-bold uppercase tracking-[0.24em] ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>Monday, August 31, 2026</p>
-            <h2 className={`text-4xl font-semibold tracking-tight ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Good morning, Minh</h2>
-            <p className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-slate-600'}`}>Here&apos;s what&apos;s happening across your hiring pipeline.</p>
+            <p className={`text-[11px] font-semibold uppercase tracking-wider ${isDarkTheme ? 'text-slate-500' : 'text-slate-500'}`}>
+              Good morning
+            </p>
+            <h2 className={`text-2xl font-bold tracking-tight ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>
+              {activeUser.fullName}
+            </h2>
+            <p className={`text-sm ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`}>
+              Here&apos;s what&apos;s happening across your hiring pipeline.
+            </p>
           </div>
 
           <button
             type="button"
             onClick={openCreateJob}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#3a7afe] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition hover:bg-[#2d64ff]"
+            className="inline-flex items-center justify-center gap-2 rounded bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
           >
             <Briefcase className="h-4 w-4" />
-            Create a job
+            Create job
           </button>
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {overviewCards.map((card) => (
-            <div key={card.label} className={`rounded-2xl border p-4 backdrop-blur-sm ${isDarkTheme ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
-              <div className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>{card.label}</div>
-              <div className={`mt-3 text-4xl font-bold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{card.value}</div>
-              <div className={`mt-2 flex items-center gap-1 text-[11px] font-medium ${card.tone}`}>
-                <span className="inline-block h-2 w-2 rounded-full bg-current" />
+            <div key={card.label} className={`rounded-lg border p-4 ${isDarkTheme ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+              <div className={`text-[11px] font-semibold uppercase tracking-wider ${isDarkTheme ? 'text-slate-500' : 'text-slate-500'}`}>
+                {card.label}
+              </div>
+              <div className={`mt-2 text-3xl font-bold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{card.value}</div>
+              <div className={`mt-2 flex items-center gap-1.5 text-[11px] font-medium ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-current" />
                 {card.change}
               </div>
             </div>
@@ -120,17 +134,23 @@ export default function RecruiterDashboard() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className={`rounded-[20px] border p-5 shadow-xl ${isDarkTheme ? 'border-white/10 bg-[#111d34] shadow-slate-950/20' : 'border-slate-200 bg-white shadow-slate-200'}`}>
+        <div className={`rounded-lg border p-5 ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
           <div className="flex items-center justify-between">
-            <h3 className={`text-[15px] font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Hiring pipeline</h3>
-            <button className="text-xs font-semibold text-[#6aa7ff] hover:text-[#8fb8ff]">View details</button>
+            <h3 className={`text-sm font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Hiring pipeline</h3>
+            <button className="text-xs font-semibold text-brand hover:text-brand-light">View details</button>
           </div>
 
-          <div className="mt-5 space-y-4">
+          <div className="mt-5 space-y-3">
             {pipelineStages.map((stage) => (
               <div key={stage.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className={`h-2.5 w-2.5 rounded-full ${stage.color}`} />
+                  <span className={`h-2 w-2 rounded-full ${
+                    stage.name === 'Applied' ? 'bg-sky-500' :
+                    stage.name === 'Screening' ? 'bg-indigo-500' :
+                    stage.name === 'Interview' ? 'bg-amber-500' :
+                    stage.name === 'Offer' ? 'bg-pink-500' :
+                    stage.name === 'Hired' ? 'bg-emerald-500' : 'bg-rose-500'
+                  }`} />
                   <span className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-slate-700'}`}>{stage.name}</span>
                 </div>
                 <span className={`text-sm font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{stage.count}</span>
@@ -139,16 +159,16 @@ export default function RecruiterDashboard() {
           </div>
         </div>
 
-        <div className={`rounded-[20px] border p-5 shadow-xl ${isDarkTheme ? 'border-white/10 bg-[#111d34] shadow-slate-950/20' : 'border-slate-200 bg-white shadow-slate-200'}`}>
+        <div className={`rounded-lg border p-5 ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
           <div className="flex items-center justify-between">
-            <h3 className={`text-[15px] font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Upcoming interviews</h3>
-            <button className="text-xs font-semibold text-[#6aa7ff] hover:text-[#8fb8ff]">View calendar</button>
+            <h3 className={`text-sm font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Upcoming interviews</h3>
+            <button className="text-xs font-semibold text-brand hover:text-brand-light">View calendar</button>
           </div>
 
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 space-y-2">
             {upcomingInterviews.map((person) => (
-              <div key={person.name} className={`flex items-center gap-3 rounded-2xl border p-3 ${isDarkTheme ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#5d88ff] to-[#7a56ff] text-xs font-bold text-white">
+              <div key={person.name} className={`flex items-center gap-3 rounded-lg border p-3 ${isDarkTheme ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded text-xs font-bold ${isDarkTheme ? 'bg-navy-700 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>
                   {person.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -157,28 +177,23 @@ export default function RecruiterDashboard() {
                 </div>
                 <div className={`text-right text-[11px] ${isDarkTheme ? 'text-slate-300' : 'text-slate-600'}`}>
                   <div className="font-medium">{person.time}</div>
-                  <div className={isDarkTheme ? 'text-slate-400' : 'text-slate-500'}>{person.mode}</div>
+                  <div className={isDarkTheme ? 'text-slate-500' : 'text-slate-400'}>{person.mode}</div>
                 </div>
               </div>
             ))}
           </div>
-
-          <div className="mt-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
-            <span className="font-semibold">AI matching pulse</span>
-            <span className="ml-2 text-emerald-100">84% of active roles have strong matches</span>
-          </div>
         </div>
       </div>
 
-      <div className={`rounded-[20px] border p-5 shadow-xl ${isDarkTheme ? 'border-white/10 bg-[#111d34] shadow-slate-950/20' : 'border-slate-200 bg-white shadow-slate-200'}`}>
+      <div className={`rounded-lg border p-5 ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
         <div className="flex items-center justify-between">
-          <h3 className={`text-[15px] font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Recent activity</h3>
-          <button className="text-xs font-semibold text-[#6aa7ff] hover:text-[#8fb8ff]">View all candidates</button>
+          <h3 className={`text-sm font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Recent activity</h3>
+          <button className="text-xs font-semibold text-brand hover:text-brand-light">View all candidates</button>
         </div>
 
-        <div className={`mt-5 overflow-hidden rounded-xl border ${isDarkTheme ? 'border-white/10' : 'border-slate-200'}`}>
+        <div className={`mt-5 overflow-hidden rounded-lg border ${isDarkTheme ? 'border-navy-700' : 'border-slate-200'}`}>
           <table className="min-w-full border-collapse text-left text-sm">
-            <thead className={isDarkTheme ? 'bg-slate-900/60 text-[10px] uppercase tracking-[0.2em] text-slate-400' : 'bg-slate-100 text-[10px] uppercase tracking-[0.2em] text-slate-500'}>
+            <thead className={isDarkTheme ? 'bg-navy-900 text-[11px] uppercase tracking-wider text-slate-500' : 'bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500'}>
               <tr>
                 <th className="px-4 py-3 font-medium">Candidate</th>
                 <th className="px-4 py-3 font-medium">Role</th>
@@ -189,20 +204,26 @@ export default function RecruiterDashboard() {
             <tbody>
               {recentActivity.length > 0 ? (
                 recentActivity.map((item, index) => (
-                  <tr key={`${item.name}-${index}`} className={`border-t ${isDarkTheme ? 'border-white/10 text-slate-200' : 'border-slate-200 text-slate-700'}`}>
+                  <tr key={`${item.name}-${index}`} className={`border-t ${isDarkTheme ? 'border-navy-700 text-slate-300' : 'border-slate-200 text-slate-700'}`}>
                     <td className={`px-4 py-3 font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{item.name}</td>
-                    <td className={`px-4 py-3 ${isDarkTheme ? 'text-slate-300' : 'text-slate-600'}`}>{item.role}</td>
+                    <td className={`px-4 py-3 ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`}>{item.role}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-200">
+                      <span className={`inline-flex rounded border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+                        item.stage === 'Applied' ? 'border-sky-500/30 bg-sky-500/10 text-sky-400' :
+                        item.stage === 'Screening' ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400' :
+                        item.stage === 'Interview' ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' :
+                        item.stage === 'Offer' ? 'border-pink-500/30 bg-pink-500/10 text-pink-400' :
+                        'border-slate-500/30 bg-slate-500/10 text-slate-400'
+                      }`}>
                         {item.stage}
                       </span>
                     </td>
-                    <td className={`px-4 py-3 ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>{item.time}</td>
+                    <td className={`px-4 py-3 ${isDarkTheme ? 'text-slate-500' : 'text-slate-500'}`}>{item.time}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={4} className="px-4 py-10 text-center text-slate-500">
                     No recent activity to display.
                   </td>
                 </tr>
@@ -216,7 +237,7 @@ export default function RecruiterDashboard() {
         <CreateJobModal
           open
           onClose={closeCreateJob}
-          onCreated={() => showToast('Đăng tin tuyển dụng thành công!', true)}
+          onCreated={() => showToast('Job created successfully!', true)}
         />
       )}
     </div>

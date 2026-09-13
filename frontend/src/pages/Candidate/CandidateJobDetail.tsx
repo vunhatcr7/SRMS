@@ -25,6 +25,15 @@ export default function CandidateJobDetail() {
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState<{ message: string; success: boolean } | null>(null);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
+
+  useEffect(() => {
+    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
+    window.addEventListener('srms-theme-change', syncTheme);
+    return () => window.removeEventListener('srms-theme-change', syncTheme);
+  }, []);
+
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     if (!jobId) return;
@@ -63,15 +72,62 @@ export default function CandidateJobDetail() {
     }
   };
 
-  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-indigo-600" />Đang tải chi tiết việc làm...</div>;
-  if (error || !job) return <div className="space-y-4"><button type="button" onClick={() => navigate('/candidate/jobs')} className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600"><ArrowLeft className="h-4 w-4" />Back to jobs</button><div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700"><AlertCircle className="mb-2 h-5 w-5" />{error || 'Job not found.'}</div></div>;
+  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading job details...</div>;
+  if (error || !job) return <div className="space-y-4"><button type="button" onClick={() => navigate('/candidate/jobs')} className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light"><ArrowLeft className="h-4 w-4" />Back to jobs</button><div className={`rounded-lg border p-6 text-sm ${isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}><AlertCircle className="mb-2 h-5 w-5" />{error || 'Job not found.'}</div></div>;
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <button type="button" onClick={() => navigate('/candidate/jobs')} className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700"><ArrowLeft className="h-4 w-4" />Back to jobs</button>
-      <section className="rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white shadow-xl sm:p-8"><div className="flex items-start gap-4"><div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-indigo-500/20 text-indigo-300"><Building2 className="h-6 w-6" /></div><div><p className="text-sm text-indigo-300">{job.company?.name || 'Company'}</p><h1 className="mt-1 text-3xl font-black">{job.title}</h1><div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-300"><span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-indigo-300" />{job.location}</span><span className="font-semibold text-emerald-300">{job.salaryRange || 'Salary not specified'}</span></div></div></div></section>
-      {feedback && <div className={`flex items-center gap-2 rounded-xl border p-4 text-sm ${feedback.success ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{feedback.success ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}{feedback.message}</div>}
-      <div className="grid gap-5 lg:grid-cols-[1fr_280px]"><div className="space-y-5"><section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="flex items-center gap-2 text-lg font-bold text-slate-900"><Briefcase className="h-5 w-5 text-indigo-600" />Description</h2><p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{job.description}</p></section><section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="flex items-center gap-2 text-lg font-bold text-slate-900"><FileText className="h-5 w-5 text-indigo-600" />Requirements</h2><p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{job.requirements}</p></section>{job.benefits && <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-lg font-bold text-slate-900">Benefits</h2><p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{job.benefits}</p></section>}</div><aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24"><h2 className="font-bold text-slate-900">Ready to apply?</h2><p className="mt-2 text-sm text-slate-500">Your current candidate profile will be attached to this application.</p><button type="button" disabled={applied || applying} onClick={() => void handleApply()} className={`mt-5 w-full rounded-xl px-4 py-3 text-sm font-bold text-white ${applied ? 'cursor-not-allowed bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:opacity-80`}>{applied ? 'Applied' : applying ? 'Submitting...' : 'Apply now'}</button></aside></div>
+      <button type="button" onClick={() => navigate('/candidate/jobs')} className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light transition">
+        <ArrowLeft className="h-4 w-4" /> Back to jobs
+      </button>
+
+      <div className={`rounded-lg border p-6 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+        <div className="flex items-start gap-4">
+          <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg ${isDark ? 'bg-brand-muted text-brand-light' : 'bg-blue-50 text-blue-600'}`}>
+            <Building2 className="h-6 w-6" />
+          </div>
+          <div>
+            <p className={`text-sm font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.company?.name || 'Company'}</p>
+            <h1 className="mt-1 text-2xl font-bold text-slate-100">{job.title}</h1>
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-400">
+              <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{job.location}</span>
+              <span className="font-semibold text-emerald-400">{job.salaryRange || 'Competitive'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {feedback && <div className={`flex items-center gap-2 rounded-lg border p-4 text-sm ${feedback.success ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-rose-500/30 bg-rose-500/10 text-rose-400'}`}>{feedback.success ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}{feedback.message}</div>}
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
+        <div className="space-y-5">
+          <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+            <h2 className="flex items-center gap-2 text-base font-bold text-slate-100"><Briefcase className="h-5 w-5 text-brand" />Description</h2>
+            <p className="mt-3 text-sm text-slate-400 leading-relaxed whitespace-pre-line">{job.description}</p>
+          </section>
+          <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+            <h2 className="flex items-center gap-2 text-base font-bold text-slate-100"><FileText className="h-5 w-5 text-brand" />Requirements</h2>
+            <p className="mt-3 text-sm text-slate-400 leading-relaxed whitespace-pre-line">{job.requirements}</p>
+          </section>
+          {job.benefits && <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+            <h2 className="text-base font-bold text-slate-100">Benefits</h2>
+            <p className="mt-3 text-sm text-slate-400 leading-relaxed whitespace-pre-line">{job.benefits}</p>
+          </section>}
+        </div>
+
+        <aside className={`h-fit rounded-lg border p-5 lg:sticky lg:top-24 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <h2 className="font-bold text-slate-100">Ready to apply?</h2>
+          <p className="mt-2 text-sm text-slate-400">Your candidate profile will be attached to this application.</p>
+          <button
+            type="button"
+            disabled={applied || applying}
+            onClick={() => void handleApply()}
+            className={`mt-5 w-full rounded px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 ${applied ? 'bg-emerald-600 cursor-not-allowed' : 'bg-brand hover:bg-brand-dark'}`}
+          >
+            {applied ? 'Applied' : applying ? 'Submitting...' : 'Apply now'}
+          </button>
+        </aside>
+      </div>
     </div>
   );
 }
