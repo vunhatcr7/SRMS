@@ -316,7 +316,7 @@ export default function RecruiterInterviews() {
           type="button"
           onClick={handleRefresh}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 rounded border border-navy-700 bg-navy-800 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-navy-600 hover:text-slate-100 disabled:opacity-50"
+          className={`inline-flex items-center gap-1.5 rounded border px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-brand' : ''}`} />
           <span>Refresh</span>
@@ -403,13 +403,17 @@ export default function RecruiterInterviews() {
            <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
              You can schedule interviews from the Recruitment Pipeline (Interview column).
            </p>
-           <button
-             type="button"
-             onClick={() => navigate('/recruiter/pipeline')}
-             className="mt-4 rounded bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark"
-           >
-             Go to Pipeline
-           </button>
+            <button
+              type="button"
+              onClick={() => navigate('/recruiter/pipeline')}
+              className={`mt-4 rounded px-4 py-2 text-xs font-semibold transition ${
+                isDark
+                  ? 'bg-brand text-white hover:bg-brand-dark'
+                  : 'bg-white border border-slate-300 text-slate-700 hover:border-slate-400 hover:text-slate-900'
+              }`}
+            >
+              Go to Pipeline
+            </button>
          </div>
        ) : (
         <div className="grid gap-3">
@@ -537,15 +541,19 @@ export default function RecruiterInterviews() {
                       </button>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEdit(item)}
-                      className="inline-flex items-center gap-1 rounded border border-navy-700 bg-navy-800 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-navy-600 hover:text-slate-100"
-                      title="Edit interview"
-                    >
-                      <Edit3 className="h-3.5 w-3.5" />
-                      <span>Edit</span>
-                    </button>
+                     <button
+                       type="button"
+                       onClick={() => handleOpenEdit(item)}
+                       className={`inline-flex items-center gap-1 rounded border px-2.5 py-1.5 text-xs font-semibold transition ${
+                         isDark
+                           ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100'
+                           : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'
+                       }`}
+                       title="Edit interview"
+                     >
+                       <Edit3 className="h-3.5 w-3.5" />
+                       <span>Edit</span>
+                     </button>
 
                     {item.status !== 'CANCELLED' && (
                       <button
