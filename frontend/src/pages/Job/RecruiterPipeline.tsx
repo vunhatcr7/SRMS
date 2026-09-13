@@ -18,6 +18,7 @@ import { formatDate, getErrorMessage, getInitials, getStageLabel } from '../../u
 import ScoreBadge from '../../components/ui/ScoreBadge';
 import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
 import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface Application {
   id: string;
@@ -74,7 +75,7 @@ export default function RecruiterPipeline() {
   const navigate = useNavigate();
 
   const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [jobFilter, setJobFilter] = useState('all');
@@ -92,6 +93,7 @@ export default function RecruiterPipeline() {
 
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   useEffect(() => {
     if (!toast) return;
@@ -116,7 +118,7 @@ export default function RecruiterPipeline() {
       })
       .finally(() => {
         if (active) {
-          setLoading(false);
+          setDataLoaded(true);
         }
       });
 
@@ -266,7 +268,7 @@ export default function RecruiterPipeline() {
     setDragOverColumn(null);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-5">
         <div className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -435,7 +437,7 @@ export default function RecruiterPipeline() {
                   {columnApps.length === 0 ? (
                     <div className={`flex flex-col items-center justify-center h-24 rounded-lg border border-dashed text-center p-3 ${isDark ? 'border-navy-700 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
                       <p className="text-xs">No candidates</p>
-                      <p className={`text-\[10px\] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Drag cards here</p>
+                      <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Drag cards here</p>
                     </div>
                   ) : (
                     columnApps.map((app) => {
@@ -469,7 +471,7 @@ export default function RecruiterPipeline() {
                                 </p>
                               </div>
                             </div>
-                            <GripVertical className={`h-3\.5 w-3\.5 shrink-0 ${isDark ? 'text-slate-500 group-hover:text-slate-300' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                            <GripVertical className={`h-3.5 w-3.5 shrink-0 ${isDark ? 'text-slate-500 group-hover:text-slate-300' : 'text-slate-400 group-hover:text-slate-600'}`} />
                           </div>
 
                           <div className="flex items-center gap-1.5 text-[11px] mb-2.5 text-slate-500">
@@ -511,7 +513,7 @@ export default function RecruiterPipeline() {
                             <select
                               value={app.stage}
                               onChange={(e) => handleStageChange(app.id, e.target.value, app.stage)}
-                              className={`text-\[11px\] rounded border px-2 py-1 outline-none focus:border-brand max-w-\[120px\] ${isDark ? 'border-navy-700 bg-navy-900 text-slate-300' : 'border-slate-200 bg-white text-slate-700'}`}
+                              className={`text-[11px] rounded border px-2 py-1 outline-none focus:border-brand max-w-[120px] ${isDark ? 'border-navy-700 bg-navy-900 text-slate-300' : 'border-slate-200 bg-white text-slate-700'}`}
                               title="Quick stage update"
                             >
                               {PIPELINE_COLUMNS.map((col) => (

@@ -18,6 +18,8 @@ import api from '../../api/axios';
 import { getErrorMessage } from '../../utils/formatters';
 import ScoreBadge from '../../components/ui/ScoreBadge';
 import SkillTag from '../../components/ui/SkillTag';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface ParsedResume {
   fullName?: string;
@@ -53,7 +55,7 @@ export default function AIMatching() {
   const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingRecs, setLoadingRecs] = useState(true);
+  const [recsLoaded, setRecsLoaded] = useState(false);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -65,6 +67,7 @@ export default function AIMatching() {
   const [toast, setToast] = useState<{ message: string; isSuccess: boolean } | null>(null);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const isLoadingRecs = useMinimumLoading(recsLoaded, 1000);
 
   const showToast = (text: string, success: boolean) => {
     setToast({ message: text, isSuccess: success });
@@ -73,13 +76,13 @@ export default function AIMatching() {
 
   const loadRecommendations = useCallback(async (showLoading = false) => {
     try {
-      if (showLoading) setLoadingRecs(true);
+      if (showLoading) setRecsLoaded(false);
       const response = await api.get('/job/recommendations?limit=10');
       setRecommendations(response.data.recommendations || []);
     } catch {
       setRecommendations([]);
     } finally {
-      if (showLoading) setLoadingRecs(false);
+      if (showLoading) setRecsLoaded(true);
     }
   }, []);
 
@@ -94,7 +97,7 @@ export default function AIMatching() {
         if (active) setRecommendations([]);
       })
       .finally(() => {
-        if (active) setLoadingRecs(false);
+        if (active) setRecsLoaded(true);
       });
 
     api.get('/candidate/profile')
@@ -351,14 +354,28 @@ export default function AIMatching() {
             onClick={() => loadRecommendations()}
             className={`p-2 rounded border transition ${isDark ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'}`}
           >
-            <RefreshCw className={`h-4 w-4 ${loadingRecs ? 'animate-spin text-brand' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${isLoadingRecs ? 'animate-spin text-brand' : ''}`} />
           </button>
         </div>
 
-        {loadingRecs ? (
-          <div className="py-12 text-center text-slate-500 flex items-center justify-center gap-2">
-            <RefreshCw className="h-4 w-4 animate-spin text-brand" />
-            <span className="text-xs font-semibold">Calculating matches...</span>
+        {isLoadingRecs ? (
+          <div className="py-12 space-y-3">
+            {Array.from({ length: 2 }).map((_, idx) => (
+              <div key={idx} className={`rounded-lg border p-4 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-10 w-28" />
+                </div>
+                <div className={`mt-3 rounded-lg border p-3 ${isDark ? 'bg-navy-850 border-navy-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-2/3 mt-2" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : recommendations.length === 0 ? (
           <div className={`rounded-lg border border-dashed p-8 text-center ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>

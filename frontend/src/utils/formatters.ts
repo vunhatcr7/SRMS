@@ -3,7 +3,9 @@
 // ===================================================
 
 export const formatDate = (date: string | Date): string => {
-  return new Date(date).toLocaleDateString('vi-VN', {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return 'Invalid date';
+  return d.toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -11,7 +13,9 @@ export const formatDate = (date: string | Date): string => {
 };
 
 export const formatDateTime = (date: string | Date): string => {
-  return new Date(date).toLocaleString('vi-VN', {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return 'Invalid date';
+  return d.toLocaleString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

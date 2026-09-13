@@ -8,7 +8,8 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Avatar from '../../components/ui/Avatar';
 import EmptyState from '../../components/ui/EmptyState';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface Application { id: string; stage: string; matchingScore: number; createdAt: string; job: { id: string; title: string; location: string; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { position?: string }; user: { id: string; fullName?: string; email: string } } }
 
@@ -21,12 +22,14 @@ export default function RecruiterCandidates() {
   const [stageFilter, setStageFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [sortByScore, setSortByScore] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
+
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   useEffect(() => {
     let active = true;
-    api.get('/application/recruiter').then((response) => { if (active) setApplications(Array.isArray(response.data) ? response.data : []); }).catch(() => { if (active) setError('Unable to load candidates.'); }).finally(() => { if (active) setLoading(false); });
+    api.get('/application/recruiter').then((response) => { if (active) setApplications(Array.isArray(response.data) ? response.data : []); }).catch(() => { if (active) setError('Unable to load candidates.'); }).finally(() => { if (active) setDataLoaded(true); });
     return () => { active = false; };
   }, []);
 
@@ -36,11 +39,73 @@ export default function RecruiterCandidates() {
     return (jobFilter === 'all' || item.job.id === jobFilter) && (stageFilter === 'all' || item.stage === stageFilter) && name.toLowerCase().includes(search.toLowerCase());
   }).sort((left, right) => sortByScore ? right.matchingScore - left.matchingScore : new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()), [applications, jobFilter, stageFilter, search, sortByScore]);
 
-  if (loading) return (
-    <div className="flex min-h-[320px] items-center justify-center">
-      <LoadingSpinner message="Loading candidates..." />
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <Card>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 w-36" />
+            <Skeleton className="h-10 w-36" />
+            <Skeleton className="h-10 w-28" />
+          </div>
+        </Card>
+        <div className={`rounded-lg border overflow-hidden ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-left text-sm">
+              <thead className={isDark ? 'bg-navy-900' : 'bg-slate-50'}>
+                <tr>
+                  {['Candidate', 'Position', 'Match score', 'Stage', 'Applied', ''].map((header) => (
+                    <th key={header} className="px-4 py-3">
+                      <Skeleton className="h-3 w-20" />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <tr key={idx} className={`border-t ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-32" />
+                          <Skeleton className="h-3 w-40" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-28" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-4 w-12" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-3 w-20" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-3 w-10" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

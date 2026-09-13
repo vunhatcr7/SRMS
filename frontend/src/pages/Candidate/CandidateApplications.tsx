@@ -7,7 +7,8 @@ import { getStageLabel } from '../../utils/formatters';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import EmptyState from '../../components/ui/EmptyState';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface Application {
   id: string;
@@ -22,22 +23,50 @@ export default function CandidateApplications() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
+
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   useEffect(() => {
     let active = true;
     api.get('/application/my')
       .then((response) => { if (active) setApplications(Array.isArray(response.data) ? response.data : []); })
       .catch(() => { if (active) setError('Unable to load applications.'); })
-      .finally(() => { if (active) setLoading(false); });
+      .finally(() => { if (active) setDataLoaded(true); });
     return () => { active = false; };
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center">
-        <LoadingSpinner message="Loading applications..." />
+      <div className="mx-auto max-w-5xl space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <Card key={idx}>
+              <Skeleton className="h-3 w-24 mb-2" />
+              <Skeleton className="h-8 w-16" />
+            </Card>
+          ))}
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <Card key={idx} padding="none" className="overflow-hidden">
+              <div className="p-4 space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+              <div className={`border-t px-4 py-3 ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

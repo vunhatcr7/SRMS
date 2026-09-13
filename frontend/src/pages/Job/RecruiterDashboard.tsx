@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Briefcase, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Briefcase, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { formatDate, getStageLabel } from '../../utils/formatters';
@@ -8,6 +8,8 @@ import CreateJobModal from '../../components/CreateJobModal';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Avatar from '../../components/ui/Avatar';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface DashboardData {
   role: string;
@@ -47,8 +49,10 @@ export default function RecruiterDashboard() {
   const [toast, setToast] = useState<{ message: string; isSuccess: boolean } | null>(null);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [interviews, setInterviews] = useState<InterviewItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
+
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   const showToast = (message: string, isSuccess: boolean) => {
     setToast({ message, isSuccess });
@@ -84,15 +88,57 @@ export default function RecruiterDashboard() {
         }
       })
       .catch(() => { if (active) setError('Unable to load dashboard.'); })
-      .finally(() => { if (active) setLoading(false); });
+      .finally(() => { if (active) setDataLoaded(true); });
     return () => { active = false; };
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center">
-        <RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />
-        <span className="text-sm text-slate-500">Loading dashboard...</span>
+      <div className="space-y-6 pb-8">
+        <Card>
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-7 w-40" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-9 w-32" />
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <Card key={idx} padding="sm">
+                <Skeleton className="h-3 w-24 mb-2" />
+                <Skeleton className="h-8 w-16" />
+              </Card>
+            ))}
+          </div>
+        </Card>
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <Card>
+            <Skeleton className="h-4 w-32 mb-5" />
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <Skeleton key={idx} className="h-4 w-full" />
+              ))}
+            </div>
+          </Card>
+          <Card>
+            <Skeleton className="h-4 w-32 mb-5" />
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <Skeleton key={idx} className="h-12 w-full" />
+              ))}
+            </div>
+          </Card>
+        </div>
+        <Card>
+          <Skeleton className="h-4 w-32 mb-5" />
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <Skeleton key={idx} className="h-10 w-full" />
+            ))}
+          </div>
+        </Card>
       </div>
     );
   }

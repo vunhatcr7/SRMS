@@ -3,8 +3,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { AlertCircle, ArrowLeft, Briefcase, Building2, CheckCircle2, FileText, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { getErrorMessage } from '../../utils/formatters';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface Job {
   id: string;
@@ -23,13 +24,14 @@ export default function CandidateJobDetail() {
   const navigate = useNavigate();
   const [job, setJob] = useState<Job | null>(null);
   const [applied, setApplied] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState<{ message: string; success: boolean } | null>(null);
   const { theme } = useTheme();
 
   const isDark = theme === 'dark';
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   useEffect(() => {
     if (!jobId) return;
@@ -44,7 +46,7 @@ export default function CandidateJobDetail() {
         if (active) setError(getErrorMessage(requestError));
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) setDataLoaded(true);
       });
     return () => { active = false; };
   }, [jobId]);
@@ -68,11 +70,48 @@ export default function CandidateJobDetail() {
     }
   };
 
-  if (loading) return (
-    <div className="flex min-h-[320px] items-center justify-center">
-      <LoadingSpinner message="Loading..." />
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-4xl space-y-5">
+        <Skeleton className="h-4 w-28" />
+        <div className={`rounded-lg border p-6 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className="flex items-start gap-4">
+            <Skeleton className="h-12 w-12 shrink-0 rounded-lg" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-6 w-56" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
+          <div className="space-y-5">
+            <div className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+              <Skeleton className="h-5 w-32 mb-4" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            </div>
+            <div className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+              <Skeleton className="h-5 w-32 mb-4" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            </div>
+          </div>
+          <aside className={`h-fit rounded-lg border p-5 lg:sticky lg:top-24 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+            <Skeleton className="h-5 w-32 mb-2" />
+            <Skeleton className="h-3 w-full mb-4" />
+            <Skeleton className="h-10 w-full" />
+          </aside>
+        </div>
+      </div>
+    );
+  }
   if (error || !job) return <div className="space-y-4"><button type="button" onClick={() => navigate('/candidate/jobs')} className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light"><ArrowLeft className="h-4 w-4" />Back to jobs</button><div className={`rounded-lg border p-6 text-sm ${isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}><AlertCircle className="mb-2 h-5 w-5" />{error || 'Job not found.'}</div></div>;
 
   return (
@@ -88,10 +127,10 @@ export default function CandidateJobDetail() {
           </div>
           <div>
             <p className={`text-sm font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.company?.name || 'Company'}</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-100">{job.title}</h1>
-            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-400">
-              <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{job.location}</span>
-              <span className="font-semibold text-emerald-400">{job.salaryRange || 'Competitive'}</span>
+            <h1 className={`mt-1 text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{job.title}</h1>
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
+              <span className={`flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}><MapPin className="h-4 w-4" />{job.location}</span>
+              <span className={`font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{job.salaryRange || 'Competitive'}</span>
             </div>
           </div>
         </div>
@@ -102,22 +141,22 @@ export default function CandidateJobDetail() {
       <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
         <div className="space-y-5">
           <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-            <h2 className="flex items-center gap-2 text-base font-bold text-slate-100"><Briefcase className="h-5 w-5 text-brand" />Description</h2>
-            <p className="mt-3 text-sm text-slate-400 leading-relaxed whitespace-pre-line">{job.description}</p>
+            <h2 className={`flex items-center gap-2 text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}><Briefcase className="h-5 w-5 text-brand" />Description</h2>
+            <p className={`mt-3 text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.description}</p>
           </section>
           <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-            <h2 className="flex items-center gap-2 text-base font-bold text-slate-100"><FileText className="h-5 w-5 text-brand" />Requirements</h2>
-            <p className="mt-3 text-sm text-slate-400 leading-relaxed whitespace-pre-line">{job.requirements}</p>
+            <h2 className={`flex items-center gap-2 text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}><FileText className="h-5 w-5 text-brand" />Requirements</h2>
+            <p className={`mt-3 text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.requirements}</p>
           </section>
           {job.benefits && <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-            <h2 className="text-base font-bold text-slate-100">Benefits</h2>
-            <p className="mt-3 text-sm text-slate-400 leading-relaxed whitespace-pre-line">{job.benefits}</p>
+            <h2 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Benefits</h2>
+            <p className={`mt-3 text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.benefits}</p>
           </section>}
         </div>
 
         <aside className={`h-fit rounded-lg border p-5 lg:sticky lg:top-24 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <h2 className="font-bold text-slate-100">Ready to apply?</h2>
-          <p className="mt-2 text-sm text-slate-400">Your candidate profile will be attached to this application.</p>
+          <h2 className={`font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Ready to apply?</h2>
+          <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Your candidate profile will be attached to this application.</p>
           <button
             type="button"
             disabled={applied || applying}

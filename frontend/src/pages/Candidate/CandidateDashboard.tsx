@@ -6,7 +6,8 @@ import api from '../../api/axios';
 import { getStageColor, getStageLabel } from '../../utils/formatters';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface RecentApplication { id: string; stage: string; matchingScore?: number; createdAt: string; job: { title: string; location: string; company?: { name: string } } }
 interface DashboardData { summary: { totalApplications: number; pendingApplications: number; hiredCount: number; applicationsByStage: Record<string, number> }; recentApplications: RecentApplication[] }
@@ -16,8 +17,10 @@ export default function CandidateDashboard() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
+
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   const userName = typeof localStorage !== 'undefined' ? (() => {
     try {
@@ -31,15 +34,43 @@ export default function CandidateDashboard() {
     api.get('/dashboard')
       .then((response) => { if (active) setData(response.data as DashboardData); })
       .catch(() => { if (active) setError('Unable to load dashboard.'); })
-      .finally(() => { if (active) setLoading(false); });
+      .finally(() => { if (active) setDataLoaded(true); });
     return () => { active = false; };
   }, []);
 
-  if (loading) return (
-    <div className="flex min-h-[320px] items-center justify-center">
-      <LoadingSpinner message="Loading dashboard..." />
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <Card key={idx}>
+              <Skeleton className="h-3 w-24 mb-2" />
+              <Skeleton className="h-8 w-16" />
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+            <Skeleton className="h-8 w-20" />
+          </div>
+          <div className="mt-5 space-y-2">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <Skeleton key={idx} className="h-12 w-full" />
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+  }
   if (error || !data) return (
     <Card className="text-sm text-rose-600 dark:text-rose-400">{error || 'No dashboard data.'}</Card>
   );

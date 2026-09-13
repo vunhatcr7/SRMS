@@ -18,7 +18,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { getErrorMessage, getInitials } from '../../utils/formatters';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface ExperienceData { years?: number; position?: string; summary?: string; }
 interface EducationData { school?: string; major?: string; summary?: string; }
@@ -57,7 +58,7 @@ const formatFileSize = (size?: number) => size ? `${(size / 1024 / 1024).toFixed
 
 export default function CandidateProfile() {
   const [profile, setProfile] = useState<CandidateProfileResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [saving, setSaving] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -82,6 +83,7 @@ export default function CandidateProfile() {
   const { theme } = useTheme();
 
   const isDark = theme === 'dark';
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   const applyProfile = (data: CandidateProfileResponse) => {
     setProfile(data);
@@ -122,7 +124,7 @@ export default function CandidateProfile() {
         }
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) setDataLoaded(true);
       });
 
     return () => {
@@ -216,10 +218,50 @@ export default function CandidateProfile() {
 
   const currentUser = profile?.user || getStoredUser();
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <LoadingSpinner message="Loading profile..." />
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <section className={`rounded-lg border p-6 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-14 w-14 shrink-0 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-40 rounded-lg" />
+          </div>
+        </section>
+        <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className={`flex items-center gap-2 border-b pb-3 mb-4 ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Skeleton className="h-12 flex-1" />
+            <Skeleton className="h-10 w-36" />
+          </div>
+        </section>
+        <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className={`border-b pb-4 mb-4 ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
+            <Skeleton className="h-5 w-40 mb-2" />
+            <Skeleton className="h-3 w-56" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }

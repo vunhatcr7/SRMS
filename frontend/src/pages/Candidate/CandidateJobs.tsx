@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Building2, MapPin, RefreshCw } from 'lucide-react';
+import { Building2, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface Job {
   id: string;
@@ -21,8 +23,10 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('en', { dateStyle:
 export default function CandidateJobs() {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
+
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   useEffect(() => {
     let active = true;
@@ -34,16 +38,36 @@ export default function CandidateJobs() {
         if (active) setError('Unable to load jobs.');
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) setDataLoaded(true);
       });
     return () => { active = false; };
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center">
-        <RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />
-        <span className="text-sm text-slate-500">Loading jobs...</span>
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <Card key={idx} padding="lg" className="flex flex-col">
+              <div className="space-y-2 mb-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="h-3 w-full mb-1" />
+              <Skeleton className="h-3 w-full mb-1" />
+              <Skeleton className="h-3 w-2/3 mb-4" />
+              <div className="mt-auto flex items-center justify-between">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-9 w-24 rounded-md" />
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

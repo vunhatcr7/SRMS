@@ -15,7 +15,8 @@ import {
 import api from '../../api/axios';
 import { getErrorMessage, getInitials, formatDate } from '../../utils/formatters';
 import SkillTag from '../../components/ui/SkillTag';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface CandidateProfileDetail {
   id: string;
@@ -50,10 +51,11 @@ export default function CandidateDetail() {
   const profileUserId = candidateId || userId;
 
   const [profile, setProfile] = useState<CandidateProfileDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   useEffect(() => {
     if (!profileUserId) return;
@@ -70,7 +72,7 @@ export default function CandidateDetail() {
       })
       .finally(() => {
         if (!active) return;
-        setLoading(false);
+        setDataLoaded(true);
       });
 
     return () => {
@@ -78,10 +80,46 @@ export default function CandidateDetail() {
     };
   }, [profileUserId]);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <LoadingSpinner message="Loading candidate profile..." />
+      <div className="max-w-4xl mx-auto space-y-5">
+        <Skeleton className="h-4 w-24" />
+        <div className={`rounded-lg border p-6 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-14 w-14 shrink-0 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-5 w-56" />
+                <Skeleton className="h-3 w-72" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+        <div className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <Skeleton className="h-5 w-24 mb-4" />
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <Skeleton key={idx} className="h-7 w-20 rounded-full" />
+            ))}
+          </div>
+        </div>
+        <div className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <Skeleton className="h-5 w-32 mb-4" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {Array.from({ length: 2 }).map((_, idx) => (
+              <div key={idx} className={`p-3.5 rounded-lg border ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+                <Skeleton className="h-3 w-32 mb-2" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <Skeleton className="h-5 w-24 mb-3" />
+          <Skeleton className="h-3 w-full" />
+        </div>
       </div>
     );
   }

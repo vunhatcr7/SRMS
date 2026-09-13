@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Video, User, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, MapPin, RefreshCw, User, Video, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
@@ -7,6 +7,8 @@ import { formatDateTime, getErrorMessage } from '../../utils/formatters';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import EmptyState from '../../components/ui/EmptyState';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface CandidateInterviewItem {
   id: string;
@@ -39,10 +41,12 @@ export default function CandidateInterviews() {
   const isDark = theme === 'dark';
 
   const [interviews, setInterviews] = useState<CandidateInterviewItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'>('ALL');
+
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   useEffect(() => {
     let active = true;
@@ -61,7 +65,7 @@ export default function CandidateInterviews() {
       })
       .finally(() => {
         if (active) {
-          setLoading(false);
+          setDataLoaded(true);
         }
       });
 
@@ -103,11 +107,120 @@ export default function CandidateInterviews() {
     }
   };
 
-  if (loading) {
+  const renderInterviewCard = (item: CandidateInterviewItem) => {
+    const job = item.application?.job;
+    const isOnline = (item.type || 'ONLINE').toUpperCase() === 'ONLINE';
+    const isLink = item.locationOrLink?.startsWith('http://') || item.locationOrLink?.startsWith('https://');
+
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center text-slate-500">
-        <RefreshCw className="h-8 w-8 animate-spin text-brand mb-3" />
-        <p className="text-sm font-medium">Loading your interviews...</p>
+      <Card key={item.id} padding="lg">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${isDark ? 'bg-brand-muted text-brand-light' : 'bg-blue-50 text-blue-600'}`}>
+              <Video className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">{job?.title || 'Job'}</h2>
+                {getStatusBadge(item.status || 'SCHEDULED')}
+              </div>
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                {job?.company?.name || 'Company'} · {job?.location || 'Remote'}
+              </p>
+            </div>
+          </div>
+
+          <div className={`rounded-lg border px-3.5 py-2 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-200">
+              <Calendar className="h-3.5 w-3.5 text-brand" />
+              <span>{formatDateTime(item.scheduledAt)}</span>
+            </div>
+            <span className={`text-[11px] mt-0.5 block ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {isOnline ? 'Online interview' : 'On-site interview'}
+            </span>
+          </div>
+        </div>
+
+        <div className={`mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3 text-xs ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+          <div className="flex items-center gap-2">
+            {isOnline ? (
+              <Video className="h-4 w-4 text-brand shrink-0" />
+            ) : (
+              <MapPin className="h-4 w-4 text-emerald-500 shrink-0" />
+            )}
+            <div className="flex-1 truncate">
+              <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                {isOnline ? 'Meeting link' : 'Location'}
+              </span>
+              {isLink ? (
+                <a
+                  href={item.locationOrLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded bg-brand px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-brand-dark transition mt-0.5"
+                >
+                  <span>Join meeting</span>
+                </a>
+              ) : (
+                <span className="font-semibold text-slate-900 dark:text-slate-200 block mt-0.5">{item.locationOrLink}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-amber-500 shrink-0" />
+            <div>
+              <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Interviewer</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-200">{item.interviewerName}</span>
+            </div>
+          </div>
+        </div>
+
+        {item.notes && (
+          <div className={`mt-3 text-xs rounded-lg border p-2.5 ${isDark ? 'text-slate-400 bg-amber-500/5 border-amber-500/20' : 'text-slate-600 bg-amber-50 border-amber-200'}`}>
+            <strong className="text-amber-500">Note:</strong> {item.notes}
+          </div>
+        )}
+      </Card>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <Skeleton key={idx} className="h-8 w-24 rounded-md" />
+          ))}
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <Card key={idx} padding="lg">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                </div>
+                <Skeleton className="h-16 w-40 rounded-lg" />
+              </div>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -182,83 +295,7 @@ export default function CandidateInterviews() {
         </Card>
       ) : (
         <div className="grid gap-3">
-          {filteredInterviews.map((item) => {
-            const job = item.application?.job;
-            const isOnline = (item.type || 'ONLINE').toUpperCase() === 'ONLINE';
-            const isLink = item.locationOrLink.startsWith('http://') || item.locationOrLink.startsWith('https://');
-
-            return (
-              <Card key={item.id} padding="lg">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${isDark ? 'bg-brand-muted text-brand-light' : 'bg-blue-50 text-blue-600'}`}>
-                      <Video className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">{job?.title || 'Job'}</h2>
-                        {getStatusBadge(item.status || 'SCHEDULED')}
-                      </div>
-                      <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                        {job?.company?.name || 'Company'} · {job?.location || 'Remote'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className={`rounded-lg border px-3.5 py-2 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-200">
-                      <Calendar className="h-3.5 w-3.5 text-brand" />
-                      <span>{formatDateTime(item.scheduledAt)}</span>
-                    </div>
-                    <span className={`text-[11px] mt-0.5 block ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {isOnline ? 'Online interview' : 'On-site interview'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className={`mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3 text-xs ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
-                  <div className="flex items-center gap-2">
-                    {isOnline ? (
-                      <Video className="h-4 w-4 text-brand shrink-0" />
-                    ) : (
-                      <MapPin className="h-4 w-4 text-emerald-500 shrink-0" />
-                    )}
-                    <div className="flex-1 truncate">
-                      <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                        {isOnline ? 'Meeting link' : 'Location'}
-                      </span>
-                      {isLink ? (
-                        <a
-                          href={item.locationOrLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 rounded bg-brand px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-brand-dark transition mt-0.5"
-                        >
-                          <span>Join meeting</span>
-                        </a>
-                      ) : (
-                        <span className="font-semibold text-slate-900 dark:text-slate-200 block mt-0.5">{item.locationOrLink}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-amber-500 shrink-0" />
-                    <div>
-                      <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Interviewer</span>
-                      <span className="font-semibold text-slate-900 dark:text-slate-200">{item.interviewerName}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {item.notes && (
-                  <div className={`mt-3 text-xs rounded-lg border p-2.5 ${isDark ? 'text-slate-400 bg-amber-500/5 border-amber-500/20' : 'text-slate-600 bg-amber-50 border-amber-200'}`}>
-                    <strong className="text-amber-500">Note:</strong> {item.notes}
-                  </div>
-                )}
-              </Card>
-            );
-          })}
+          {filteredInterviews.map((item) => renderInterviewCard(item))}
         </div>
       )}
     </div>

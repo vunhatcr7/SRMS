@@ -37,17 +37,17 @@ export default function RecruiterCandidateDetail() {
         <ArrowLeft className="h-4 w-4" /> Back to candidates
       </button>
 
-      <div className={`rounded-lg border p-6 ${isDark ? 'border-navy-700 bg-navy-900' : 'border-slate-200 bg-slate-900 text-white'}`}>
+      <div className={`rounded-lg border p-6 ${isDark ? 'border-navy-700 bg-navy-900' : 'border-slate-200 bg-white text-slate-900'}`}>
         <div className="flex items-center gap-4">
-          <div className={`grid h-14 w-14 place-items-center rounded-lg text-xl font-black ${isDark ? 'bg-brand-muted text-brand-light' : 'bg-brand/20 text-brand-light'}`}>
+          <div className={`grid h-14 w-14 place-items-center rounded-lg text-xl font-black ${isDark ? 'bg-brand-muted text-brand-light' : 'bg-blue-100 text-blue-700'}`}>
             {(user.fullName || 'C').charAt(0).toUpperCase()}
           </div>
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-light">
+            <div className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-brand-light' : 'text-blue-700'}`}>
               <User className="h-4 w-4" /> Candidate profile
             </div>
-            <h1 className="mt-1 text-xl font-bold text-white">{user.fullName || 'Unnamed candidate'}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-300">
+            <h1 className={`mt-1 text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{user.fullName || 'Unnamed candidate'}</h1>
+            <div className={`mt-2 flex flex-wrap items-center gap-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
               <span className="flex items-center gap-1"><Mail className="h-4 w-4" />{user.email}</span>
               {user.phone && <span className="flex items-center gap-1"><Phone className="h-4 w-4" />{user.phone}</span>}
             </div>
@@ -57,30 +57,30 @@ export default function RecruiterCandidateDetail() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <h2 className="text-base font-bold text-slate-100">Professional profile</h2>
-          <p className="mt-3 text-sm text-slate-300">{candidate.experience?.position || 'Position not specified'} · {candidate.experience?.years ?? 0} years</p>
-          <p className="mt-3 text-sm text-slate-400 leading-relaxed">{candidate.experience?.summary || 'No experience summary provided.'}</p>
+          <h2 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Professional profile</h2>
+          <p className={`mt-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{candidate.experience?.position || 'Position not specified'} · {candidate.experience?.years ?? 0} years</p>
+          <p className={`mt-3 text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{candidate.experience?.summary || 'No experience summary provided.'}</p>
 
-          <h3 className="mt-5 font-semibold text-slate-200">Skills</h3>
-          <p className="mt-2 text-sm text-slate-400">{candidate.skills.join(', ') || 'No skills listed.'}</p>
+          <h3 className={`mt-5 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Skills</h3>
+          <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{candidate.skills.join(', ') || 'No skills listed.'}</p>
 
-          <h3 className="mt-5 font-semibold text-slate-200">Education</h3>
-          <p className="mt-2 text-sm text-slate-400">{candidate.education?.summary || [candidate.education?.school, candidate.education?.major].filter(Boolean).join(' - ') || 'No education information.'}</p>
+          <h3 className={`mt-5 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Education</h3>
+          <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{candidate.education?.summary || [candidate.education?.school, candidate.education?.major].filter(Boolean).join(' - ') || 'No education information.'}</p>
 
           {candidate.resumeUrl && (
-            <a href={candidate.resumeUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded border border-navy-700 bg-navy-800 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:border-navy-600 hover:text-slate-100">
+            <a href={candidate.resumeUrl} target="_blank" rel="noreferrer" className={`mt-5 inline-flex items-center gap-2 rounded border px-4 py-2 text-xs font-semibold transition hover:opacity-80 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}>
               <FileText className="h-4 w-4" /> View resume <ExternalLink className="h-3 w-3 opacity-60" />
             </a>
           )}
         </section>
 
         <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <h2 className="text-base font-bold text-slate-100">Applications</h2>
+          <h2 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Applications</h2>
           <div className="mt-4 space-y-3">
             {applications.map((app) => (
               <div key={app.id} className={`flex items-center justify-between rounded-lg border p-3 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
                 <div>
-                  <div className="text-sm font-semibold text-slate-200">{app.job.title}</div>
+                  <div className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{app.job.title}</div>
                   <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{app.job.company?.name || 'Company'} · {app.job.location}</div>
                 </div>
                 <div className="text-right">
