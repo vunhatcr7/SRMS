@@ -264,8 +264,8 @@ export default function RecruiterInterviews() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">Recruiter workspace</p>
-          <h1 className="mt-1 text-xl font-bold text-slate-100">Interviews</h1>
-          <p className="mt-1 text-xs text-slate-400">
+           <h1 className={`mt-1 text-xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Interviews</h1>
+           <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Track, schedule, and update candidate interview sessions.
           </p>
         </div>
@@ -354,22 +354,22 @@ export default function RecruiterInterviews() {
         </div>
       </div>
 
-      {filteredInterviews.length === 0 ? (
-        <div className={`rounded-lg border border-dashed p-12 text-center ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <Calendar className="mx-auto h-10 w-10 text-slate-500 mb-3" />
-          <h3 className="text-sm font-bold text-slate-200">No interviews found</h3>
-          <p className="mt-1 text-xs text-slate-400">
-            You can schedule interviews from the Recruitment Pipeline (Interview column).
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/recruiter/pipeline')}
-            className="mt-4 rounded bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark"
-          >
-            Go to Pipeline
-          </button>
-        </div>
-      ) : (
+       {filteredInterviews.length === 0 ? (
+         <div className={`rounded-lg border border-dashed p-12 text-center ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+           <Calendar className={`mx-auto h-10 w-10 mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+           <h3 className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>No interviews found</h3>
+           <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+             You can schedule interviews from the Recruitment Pipeline (Interview column).
+           </p>
+           <button
+             type="button"
+             onClick={() => navigate('/recruiter/pipeline')}
+             className="mt-4 rounded bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark"
+           >
+             Go to Pipeline
+           </button>
+         </div>
+       ) : (
         <div className="grid gap-3">
           {filteredInterviews.map((item) => {
             const candidate = item.application?.candidateProfile;
@@ -406,15 +406,15 @@ export default function RecruiterInterviews() {
                     </div>
                   </div>
 
-                  <div className={`sm:text-right rounded-lg border px-3.5 py-2 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 sm:justify-end">
-                      <Calendar className="h-3.5 w-3.5 text-brand" />
-                      <span>{formatDateTime(item.scheduledAt)}</span>
-                    </div>
-                    <span className={`text-[11px] mt-0.5 block ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      Created {formatDate(item.createdAt)}
-                    </span>
-                  </div>
+                   <div className={`sm:text-right rounded-lg border px-3.5 py-2 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+                     <div className={`flex items-center gap-1.5 text-xs font-bold sm:justify-end ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
+                       <Calendar className="h-3.5 w-3.5 text-brand" />
+                       <span>{formatDateTime(item.scheduledAt)}</span>
+                     </div>
+                     <span className={`text-[11px] mt-0.5 block ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                       Created {formatDate(item.createdAt)}
+                     </span>
+                   </div>
                 </div>
 
                 <div className={`mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg border p-3 text-xs ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
@@ -424,48 +424,48 @@ export default function RecruiterInterviews() {
                     ) : (
                       <MapPin className="h-4 w-4 text-emerald-500 shrink-0" />
                     )}
-                    <div>
-                      <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Type</span>
-                      <span className="font-semibold text-slate-200">
-                        {isOnline ? 'Online' : 'On-site'}
-                      </span>
-                    </div>
-                  </div>
+                     <div>
+                       <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Type</span>
+                       <span className={`font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
+                         {isOnline ? 'Online' : 'On-site'}
+                       </span>
+                     </div>
+                   </div>
 
-                  <div className="flex items-center gap-2 truncate">
-                    <MapPin className="h-4 w-4 text-brand shrink-0" />
-                    <div className="truncate">
-                      <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Location / Link</span>
-                      {isLink ? (
-                        <a
-                          href={item.locationOrLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-semibold text-brand hover:underline inline-flex items-center gap-1 truncate"
-                        >
-                          <span className="truncate">{item.locationOrLink}</span>
-                          <ExternalLink className="h-3 w-3 shrink-0" />
-                        </a>
-                      ) : (
-                        <span className="font-semibold text-slate-200 truncate block" title={item.locationOrLink}>
-                          {item.locationOrLink}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                   <div className="flex items-center gap-2 truncate">
+                     <MapPin className="h-4 w-4 text-brand shrink-0" />
+                     <div className="truncate">
+                       <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Location / Link</span>
+                       {isLink ? (
+                         <a
+                           href={item.locationOrLink}
+                           target="_blank"
+                           rel="noreferrer"
+                           className="font-semibold text-brand hover:underline inline-flex items-center gap-1 truncate"
+                         >
+                           <span className="truncate">{item.locationOrLink}</span>
+                           <ExternalLink className="h-3 w-3 shrink-0" />
+                         </a>
+                        ) : (
+                         <span className={`font-semibold truncate block ${isDark ? 'text-slate-200' : 'text-slate-900'}`} title={item.locationOrLink}>
+                           {item.locationOrLink}
+                         </span>
+                       )}
+                     </div>
+                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-amber-500 shrink-0" />
-                    <div>
-                      <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Interviewer</span>
-                      <span className="font-semibold text-slate-200">{item.interviewerName}</span>
-                    </div>
-                  </div>
-                </div>
+                   <div className="flex items-center gap-2">
+                     <User className="h-4 w-4 text-amber-500 shrink-0" />
+                     <div>
+                       <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Interviewer</span>
+                       <span className={`font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>{item.interviewerName}</span>
+                     </div>
+                   </div>
+                 </div>
 
-                {item.notes && (
-                  <p className={`mt-3 text-xs rounded-lg border p-2.5 ${isDark ? 'text-slate-400 bg-amber-500/5 border-amber-500/20' : 'text-slate-600 bg-amber-50 border-amber-200'}`}>
-                    <strong className="text-amber-500">Notes:</strong> {item.notes}
+                 {item.notes && (
+                   <p className={`mt-3 text-xs rounded-lg border p-2.5 ${isDark ? 'text-slate-400 bg-amber-500/5 border-amber-500/20' : 'text-slate-600 bg-amber-50 border-amber-200'}`}>
+                     <strong className="text-amber-500">Notes:</strong> {item.notes}
                   </p>
                 )}
 
