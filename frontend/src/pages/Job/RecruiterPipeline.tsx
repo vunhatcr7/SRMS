@@ -17,6 +17,7 @@ import api from '../../api/axios';
 import { formatDate, getErrorMessage, getInitials, getStageLabel } from '../../utils/formatters';
 import ScoreBadge from '../../components/ui/ScoreBadge';
 import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
+import Skeleton from '../../components/ui/Skeleton';
 
 interface Application {
   id: string;
@@ -267,9 +268,36 @@ export default function RecruiterPipeline() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center text-slate-500">
-        <RefreshCw className="h-8 w-8 animate-spin text-brand mb-3" />
-        <p className="text-sm font-medium">Loading recruitment pipeline...</p>
+      <div className="flex flex-col gap-5">
+        <div className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className={`rounded-lg border p-3.5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 w-40" />
+            <Skeleton className="h-10 w-40" />
+            <Skeleton className="h-10 w-36" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div key={idx} className={`rounded-lg border p-3 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-5 w-6 rounded-full" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-24 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -299,10 +327,10 @@ export default function RecruiterPipeline() {
               {filteredApplications.length} candidates
             </span>
           </div>
-          <h1 className="mt-1 text-xl font-bold text-slate-100 tracking-tight">
+          <h1 className={`mt-1 text-xl font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
             Recruitment pipeline
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Drag and drop cards between columns to update hiring progress in real time.
           </p>
         </div>
@@ -390,7 +418,7 @@ export default function RecruiterPipeline() {
                       column.key === 'OFFER' ? 'bg-pink-500' :
                       column.key === 'HIRED' ? 'bg-emerald-500' : 'bg-rose-500'
                     }`} />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <h3 className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       {column.label}
                     </h3>
                   </div>
@@ -401,9 +429,9 @@ export default function RecruiterPipeline() {
 
                 <div className="flex flex-col gap-2.5 p-2.5 min-h-[400px] max-h-[calc(100vh-240px)] overflow-y-auto">
                   {columnApps.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-24 rounded-lg border border-dashed border-navy-700 text-slate-500 text-center p-3">
+                    <div className={`flex flex-col items-center justify-center h-24 rounded-lg border border-dashed text-center p-3 ${isDark ? 'border-navy-700 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
                       <p className="text-xs">No candidates</p>
-                      <p className="text-[10px] text-slate-600 mt-1">Drag cards here</p>
+                      <p className={`text-\[10px\] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Drag cards here</p>
                     </div>
                   ) : (
                     columnApps.map((app) => {
@@ -429,7 +457,7 @@ export default function RecruiterPipeline() {
                                 {getInitials(fullName)}
                               </div>
                               <div className="min-w-0">
-                                <h4 className="truncate text-xs font-bold text-slate-100" title={fullName}>
+                                <h4 className={`truncate text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`} title={fullName}>
                                   {fullName}
                                 </h4>
                                 <p className="truncate text-[11px] text-slate-500" title={position}>
@@ -437,7 +465,7 @@ export default function RecruiterPipeline() {
                                 </p>
                               </div>
                             </div>
-                            <GripVertical className="h-3.5 w-3.5 text-slate-600 group-hover:text-slate-400 shrink-0" />
+                            <GripVertical className={`h-3\.5 w-3\.5 shrink-0 ${isDark ? 'text-slate-500 group-hover:text-slate-300' : 'text-slate-400 group-hover:text-slate-600'}`} />
                           </div>
 
                           <div className="flex items-center gap-1.5 text-[11px] mb-2.5 text-slate-500">
@@ -479,7 +507,7 @@ export default function RecruiterPipeline() {
                             <select
                               value={app.stage}
                               onChange={(e) => handleStageChange(app.id, e.target.value, app.stage)}
-                              className="text-[11px] rounded border border-navy-700 bg-navy-900 px-2 py-1 text-slate-300 outline-none focus:border-brand max-w-[120px]"
+                              className={`text-\[11px\] rounded border px-2 py-1 outline-none focus:border-brand max-w-\[120px\] ${isDark ? 'border-navy-700 bg-navy-900 text-slate-300' : 'border-slate-200 bg-white text-slate-700'}`}
                               title="Quick stage update"
                             >
                               {PIPELINE_COLUMNS.map((col) => (

@@ -21,6 +21,7 @@ import api from '../../api/axios';
 import { formatDate, formatDateTime, getErrorMessage, getInitials } from '../../utils/formatters';
 import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
 import type { InterviewData } from '../../components/ScheduleInterviewModal';
+import Skeleton from '../../components/ui/Skeleton';
 
 interface RecruiterInterviewItem {
   id: string;
@@ -226,9 +227,50 @@ export default function RecruiterInterviews() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center text-slate-500">
-        <RefreshCw className="h-8 w-8 animate-spin text-brand mb-3" />
-        <p className="text-sm font-medium">Loading interviews...</p>
+      <div className="flex flex-col gap-5">
+        <div className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <div className={`rounded-lg border p-3.5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 w-40" />
+            <Skeleton className="h-10 w-36" />
+          </div>
+        </div>
+        <div className={`rounded-lg border p-3.5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-20" />
+          </div>
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <div key={idx} className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                </div>
+                <Skeleton className="h-16 w-40 rounded-lg shrink-0" />
+              </div>
+              <div className={`mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
