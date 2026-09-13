@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 import { X, Calendar, Clock, Video, MapPin, User, FileText, AlertCircle } from 'lucide-react';
 import api from '../api/axios';
 import { getErrorMessage } from '../utils/formatters';
@@ -97,14 +98,23 @@ function ModalContent({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [open, onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

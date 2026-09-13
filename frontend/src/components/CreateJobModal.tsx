@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   PlusCircle,
   CheckCircle2,
@@ -43,23 +44,8 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const savedTheme = localStorage.getItem('srms-theme');
-    return savedTheme === 'light' ? 'light' : 'dark';
-  });
-
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
-
-  useEffect(() => {
-    const syncTheme = () => {
-      const savedTheme = localStorage.getItem('srms-theme');
-      setTheme(savedTheme === 'light' ? 'light' : 'dark');
-    };
-
-    syncTheme();
-    window.addEventListener('srms-theme-change', syncTheme as EventListener);
-    return () => window.removeEventListener('srms-theme-change', syncTheme as EventListener);
-  }, []);
 
   useEffect(() => {
     if (!open) return;

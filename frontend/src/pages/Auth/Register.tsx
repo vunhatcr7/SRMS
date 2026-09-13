@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 import api from '../../api/axios';
 import AuthLayout from '../../components/Layouts/AuthLayout';
 
@@ -10,6 +12,8 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const { theme, toggle } = useTheme();
+  const isDark = theme === 'dark';
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +38,18 @@ export default function Register() {
       title="Create your account"
       description="Join the SRMS recruitment workspace."
     >
-      <form onSubmit={handleRegister} className="space-y-5">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={toggle}
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 dark:border-navy-700 dark:bg-navy-900 dark:text-slate-400 dark:hover:border-navy-600"
+          aria-label="Toggle theme"
+        >
+          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+      </div>
+
+      <form onSubmit={handleRegister} className="mt-4 space-y-5">
         <div>
           <label htmlFor="register-email" className="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300">
             Email
