@@ -2,18 +2,20 @@
 // SRMS Platform - Shared Formatter Utilities
 // ===================================================
 
-/** Format ngày theo định dạng tiếng Việt */
 export const formatDate = (date: string | Date): string => {
-  return new Date(date).toLocaleDateString('vi-VN', {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return 'Invalid date';
+  return d.toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   });
 };
 
-/** Format ngày + giờ */
 export const formatDateTime = (date: string | Date): string => {
-  return new Date(date).toLocaleString('vi-VN', {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return 'Invalid date';
+  return d.toLocaleString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -22,61 +24,53 @@ export const formatDateTime = (date: string | Date): string => {
   });
 };
 
-/** Màu sắc theo ngưỡng điểm AI (Tailwind classes) */
 export const getScoreColor = (score: number): string => {
-  if (score >= 75) return 'text-emerald-600';
-  if (score >= 50) return 'text-amber-500';
-  return 'text-rose-500';
+  if (score >= 75) return 'text-emerald-400';
+  if (score >= 50) return 'text-amber-400';
+  return 'text-rose-400';
 };
 
-/** Màu nền badge điểm AI (Tailwind classes) */
 export const getScoreBgColor = (score: number): string => {
-  if (score >= 75) return 'bg-emerald-50 border-emerald-200 text-emerald-700';
-  if (score >= 50) return 'bg-amber-50 border-amber-200 text-amber-700';
-  return 'bg-rose-50 border-rose-200 text-rose-700';
+  if (score >= 75) return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+  if (score >= 50) return 'bg-amber-500/10 border-amber-500/30 text-amber-400';
+  return 'bg-rose-500/10 border-rose-500/30 text-rose-400';
 };
 
-/** Label tiếng Việt cho ProcessStage */
 export const getStageLabel = (stage: string): string => {
   const map: Record<string, string> = {
-    APPLIED: 'Đã nộp đơn',
-    SCREENING: 'Lọc hồ sơ',
-    INTERVIEW: 'Phỏng vấn',
-    OFFER: 'Gửi Offer',
-    HIRED: 'Đã tuyển',
-    REJECTED: 'Từ chối',
+    APPLIED: 'Applied',
+    SCREENING: 'Screening',
+    INTERVIEW: 'Interview',
+    OFFER: 'Offer',
+    HIRED: 'Hired',
+    REJECTED: 'Rejected',
   };
   return map[stage] ?? stage;
 };
 
-/** Màu badge theo ProcessStage (Tailwind classes) */
 export const getStageColor = (stage: string): string => {
   const map: Record<string, string> = {
-    APPLIED: 'bg-blue-50 text-blue-700 border-blue-200',
-    SCREENING: 'bg-purple-50 text-purple-700 border-purple-200',
-    INTERVIEW: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    OFFER: 'bg-pink-50 text-pink-700 border-pink-200',
-    HIRED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    REJECTED: 'bg-rose-50 text-rose-700 border-rose-200',
+    APPLIED: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
+    SCREENING: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
+    INTERVIEW: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+    OFFER: 'bg-pink-500/10 text-pink-400 border-pink-500/30',
+    HIRED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+    REJECTED: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
   };
-  return map[stage] ?? 'bg-slate-50 text-slate-700 border-slate-200';
+  return map[stage] ?? 'bg-slate-500/10 text-slate-400 border-slate-500/30';
 };
 
-/** Lấy chữ cái đầu để hiển thị Avatar */
 export const getInitials = (name?: string | null): string => {
   if (!name?.trim()) return '?';
   return name.trim().charAt(0).toUpperCase();
 };
 
-/** Rút gọn chuỗi dài */
 export const truncate = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + '...';
 };
 
-/** Lấy message lỗi từ axios error */
 export const getErrorMessage = (error: unknown): string => {
   const response = (error as { response?: { data?: { message?: string } } }).response;
-  return response?.data?.message ?? 'Không thể kết nối tới server.';
+  return response?.data?.message ?? 'Unable to connect to server.';
 };
-

@@ -6,19 +6,18 @@ interface ScoreBadgeProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-/** Badge hiển thị điểm AI với màu theo ngưỡng (đỏ/vàng/xanh) */
 export default function ScoreBadge({ score, label, size = 'md' }: ScoreBadgeProps) {
   const colorClass = getScoreBgColor(score);
 
   const sizeClass = {
     sm: 'text-xs px-2 py-0.5',
     md: 'text-sm px-2.5 py-1',
-    lg: 'text-base px-3 py-1.5 font-black',
+    lg: 'text-base px-3 py-1.5 font-bold',
   }[size];
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border font-bold ${colorClass} ${sizeClass}`}
+      className={`inline-flex items-center gap-1 rounded border font-semibold ${colorClass} ${sizeClass}`}
       title={label}
     >
       {score}%
@@ -26,4 +25,3 @@ export default function ScoreBadge({ score, label, size = 'md' }: ScoreBadgeProp
     </span>
   );
 }
-

@@ -1,21 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { 
-  Briefcase, 
-  Calendar, 
+import {
+  Briefcase,
+  Calendar,
   CalendarPlus,
-  Eye, 
-  Filter, 
-  GripVertical, 
-  RefreshCw, 
-  Search, 
+  Eye,
+  Filter,
+  GripVertical,
+  RefreshCw,
+  Search,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { formatDate, getErrorMessage, getInitials, getStageLabel } from '../../utils/formatters';
 import ScoreBadge from '../../components/ui/ScoreBadge';
 import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface Application {
   id: string;
@@ -60,44 +63,44 @@ interface ColumnConfig {
 }
 
 const PIPELINE_COLUMNS: ColumnConfig[] = [
-  { key: 'APPLIED', label: 'Đã nộp đơn', color: 'text-blue-600', badgeBg: 'bg-blue-100 text-blue-800', borderColor: 'border-blue-200' },
-  { key: 'SCREENING', label: 'Lọc hồ sơ', color: 'text-purple-600', badgeBg: 'bg-purple-100 text-purple-800', borderColor: 'border-purple-200' },
-  { key: 'INTERVIEW', label: 'Phỏng vấn', color: 'text-amber-600', badgeBg: 'bg-amber-100 text-amber-800', borderColor: 'border-amber-200' },
-  { key: 'OFFER', label: 'Gửi Offer', color: 'text-pink-600', badgeBg: 'bg-pink-100 text-pink-800', borderColor: 'border-pink-200' },
-  { key: 'HIRED', label: 'Đã tuyển', color: 'text-emerald-600', badgeBg: 'bg-emerald-100 text-emerald-800', borderColor: 'border-emerald-200' },
-  { key: 'REJECTED', label: 'Từ chối', color: 'text-rose-600', badgeBg: 'bg-rose-100 text-rose-800', borderColor: 'border-rose-200' },
+  { key: 'APPLIED', label: 'Applied', color: 'text-sky-400', badgeBg: 'bg-sky-500/10 text-sky-400 border-sky-500/30', borderColor: 'border-sky-500/30' },
+  { key: 'SCREENING', label: 'Screening', color: 'text-indigo-400', badgeBg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30', borderColor: 'border-indigo-500/30' },
+  { key: 'INTERVIEW', label: 'Interview', color: 'text-amber-400', badgeBg: 'bg-amber-500/10 text-amber-400 border-amber-500/30', borderColor: 'border-amber-500/30' },
+  { key: 'OFFER', label: 'Offer', color: 'text-pink-400', badgeBg: 'bg-pink-500/10 text-pink-400 border-pink-500/30', borderColor: 'border-pink-500/30' },
+  { key: 'HIRED', label: 'Hired', color: 'text-emerald-400', badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', borderColor: 'border-emerald-500/30' },
+  { key: 'REJECTED', label: 'Rejected', color: 'text-rose-400', badgeBg: 'bg-rose-500/10 text-rose-400 border-rose-500/30', borderColor: 'border-rose-500/30' },
 ];
 
 export default function RecruiterPipeline() {
   const navigate = useNavigate();
 
   const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [jobFilter, setJobFilter] = useState('all');
   const [search, setSearch] = useState('');
 
-  // Drag-and-drop states
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Schedule Interview Modal state
   const [scheduleModalApp, setScheduleModalApp] = useState<{
     applicationId: string;
     candidateName: string;
     jobTitle: string;
   } | null>(null);
 
-  // Auto-dismiss toast
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
+
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), 3500);
     return () => clearTimeout(timer);
   }, [toast]);
 
-  // Initial load
   useEffect(() => {
     let active = true;
 
@@ -110,12 +113,12 @@ export default function RecruiterPipeline() {
       })
       .catch((err) => {
         if (active) {
-          setError(getErrorMessage(err) || 'Không thể tải danh sách ứng tuyển pipeline.');
+          setError(getErrorMessage(err) || 'Unable to load pipeline.');
         }
       })
       .finally(() => {
         if (active) {
-          setLoading(false);
+          setDataLoaded(true);
         }
       });
 
@@ -124,7 +127,6 @@ export default function RecruiterPipeline() {
     };
   }, []);
 
-  // Manual refresh
   const handleRefresh = () => {
     setRefreshing(true);
     api.get('/application/recruiter')
@@ -133,14 +135,13 @@ export default function RecruiterPipeline() {
         setError('');
       })
       .catch((err) => {
-        setError(getErrorMessage(err) || 'Không thể tải danh sách ứng tuyển pipeline.');
+        setError(getErrorMessage(err) || 'Unable to load pipeline.');
       })
       .finally(() => {
         setRefreshing(false);
       });
   };
 
-  // Distinct list of jobs managed by recruiter
   const jobs = useMemo(() => {
     const map = new Map<string, { id: string; title: string }>();
     applications.forEach((app) => {
@@ -151,7 +152,6 @@ export default function RecruiterPipeline() {
     return Array.from(map.values());
   }, [applications]);
 
-  // Filter applications by selected job and search query
   const filteredApplications = useMemo(() => {
     return applications.filter((app) => {
       const matchesJob = jobFilter === 'all' || app.job?.id === jobFilter;
@@ -159,9 +159,9 @@ export default function RecruiterPipeline() {
       const candidateEmail = app.candidateProfile?.user?.email || '';
       const candidatePos = app.candidateProfile?.experience?.position || '';
       const query = search.toLowerCase().trim();
-      const matchesSearch = !query || 
-        candidateName.toLowerCase().includes(query) || 
-        candidateEmail.toLowerCase().includes(query) || 
+      const matchesSearch = !query ||
+        candidateName.toLowerCase().includes(query) ||
+        candidateEmail.toLowerCase().includes(query) ||
         candidatePos.toLowerCase().includes(query) ||
         app.job?.title?.toLowerCase().includes(query);
 
@@ -169,7 +169,6 @@ export default function RecruiterPipeline() {
     });
   }, [applications, jobFilter, search]);
 
-  // Group applications by stage
   const groupedByStage = useMemo(() => {
     const groups: Record<string, Application[]> = {
       APPLIED: [],
@@ -192,23 +191,19 @@ export default function RecruiterPipeline() {
     return groups;
   }, [filteredApplications]);
 
-  // Core Stage Update Handler (Optimistic UI + Revert on Failure)
   const handleStageChange = async (applicationId: string, newStage: string, prevStage: string) => {
     if (newStage === prevStage) return;
 
-    // 1. Optimistically update local state
     setApplications((prev) =>
       prev.map((app) => (app.id === applicationId ? { ...app, stage: newStage } : app))
     );
 
     try {
-      // 2. Call backend API
       const res = await api.put('/application/update-stage', {
         applicationId,
         stage: newStage,
       });
 
-      // 3. Confirm with updated data from server if returned
       if (res.data?.application) {
         setApplications((prev) =>
           prev.map((app) => (app.id === applicationId ? { ...app, ...res.data.application } : app))
@@ -216,22 +211,20 @@ export default function RecruiterPipeline() {
       }
 
       setToast({
-        message: `Đã chuyển ứng viên sang "${getStageLabel(newStage)}"`,
+        message: `Moved candidate to "${getStageLabel(newStage)}"`,
         type: 'success',
       });
     } catch (err: unknown) {
-      // 4. Revert UI on failure
       setApplications((prev) =>
         prev.map((app) => (app.id === applicationId ? { ...app, stage: prevStage } : app))
       );
       setToast({
-        message: getErrorMessage(err) || 'Cập nhật giai đoạn thất bại. Đã khôi phục trạng thái.',
+        message: getErrorMessage(err) || 'Failed to update stage. Reverted.',
         type: 'error',
       });
     }
   };
 
-  // Drag and Drop Event Handlers
   const handleDragStart = (e: React.DragEvent, applicationId: string, currentStage: string) => {
     setDraggedAppId(applicationId);
     e.dataTransfer.setData('text/plain', JSON.stringify({ applicationId, currentStage }));
@@ -275,93 +268,116 @@ export default function RecruiterPipeline() {
     setDragOverColumn(null);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center text-slate-500">
-        <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-        <p className="text-sm font-medium">Đang tải Recruitment Pipeline...</p>
+      <div className="flex flex-col gap-5">
+        <div className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className={`rounded-lg border p-3.5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 w-40" />
+            <Skeleton className="h-10 w-40" />
+            <Skeleton className="h-10 w-36" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div key={idx} className={`rounded-lg border p-3 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-5 w-6 rounded-full" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-24 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full space-y-5">
-      {/* Toast notification */}
       {toast && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl px-4 py-3 shadow-xl text-sm font-medium transition-all ${
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium shadow-card transition-all ${
             toast.type === 'success'
-              ? 'bg-emerald-600 text-white'
-              : 'bg-rose-600 text-white'
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+              : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
           }`}
         >
-          {toast.type === 'success' ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-          ) : (
-            <AlertCircle className="h-4 w-4 shrink-0" />
-          )}
+          {toast.type === 'success' ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
           <span>{toast.message}</span>
         </div>
       )}
 
-      {/* Page Header */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-brand bg-brand-muted px-2.5 py-0.5 rounded border border-brand/20">
               Recruiter Pipeline
             </span>
             <span className="text-xs text-slate-500">
-              {filteredApplications.length} ứng viên
+              {filteredApplications.length} candidates
             </span>
           </div>
-          <h1 className="mt-1 text-2xl font-black text-slate-900 tracking-tight">
-            Quy trình tuyển dụng (Kanban)
+          <h1 className={`mt-1 text-xl font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            Recruitment pipeline
           </h1>
-          <p className="text-xs text-slate-500">
-            Kéo thả thẻ ứng viên giữa các cột để cập nhật tiến độ tuyển dụng theo thời gian thực.
+          <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Drag and drop cards between columns to update hiring progress in real time.
           </p>
         </div>
 
-        {/* Action Controls */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition disabled:opacity-50"
-            title="Làm mới dữ liệu"
+            className={`inline-flex items-center gap-1.5 rounded border px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${
+              isDark
+                ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100'
+                : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'
+            }`}
+            title="Refresh data"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-blue-600' : ''}`} />
-            <span>Làm mới</span>
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-brand' : ''}`} />
+            <span>Refresh</span>
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Filter and Search Bar */}
-      <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col gap-2.5 sm:flex-row sm:items-center">
-          {/* Search box */}
+      <div className={`rounded-lg border p-3.5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo tên, email, vị trí..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none"
+              placeholder="Search by name, email, position..."
+              className={`w-full rounded border bg-transparent py-2 pl-9 pr-3 text-sm outline-none transition ${
+                isDark ? 'border-navy-700 text-slate-200 placeholder:text-slate-500 focus:border-brand' : 'border-slate-200 text-slate-700 placeholder:text-slate-400 focus:border-brand'
+              }`}
             />
           </div>
 
-          {/* Job Filter */}
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+            <Filter className="h-4 w-4 text-slate-500 shrink-0" />
             <select
               value={jobFilter}
               onChange={(e) => setJobFilter(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 focus:border-blue-500 focus:bg-white focus:outline-none max-w-xs truncate"
+              className={`rounded border bg-transparent px-3 py-2 text-xs font-medium outline-none transition ${isDark ? 'border-navy-700 text-slate-200 focus:border-brand' : 'border-slate-200 text-slate-700 focus:border-brand'}`}
             >
-              <option value="all">Tất cả công việc ({jobs.length})</option>
+              <option value="all">All jobs ({jobs.length})</option>
               {jobs.map((job) => (
                 <option key={job.id} value={job.id}>
                   {job.title}
@@ -370,23 +386,17 @@ export default function RecruiterPipeline() {
             </select>
           </div>
         </div>
-
-        {/* Status indicator */}
-        <div className="text-right text-xs text-slate-400 font-medium">
-          Hiển thị: <strong className="text-slate-700">{filteredApplications.length}</strong> hồ sơ
-        </div>
-      </section>
+      </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700 flex items-center gap-2">
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-semibold text-rose-400 flex items-center gap-2">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Kanban Board Horizontal Scroll Container */}
       <div className="flex-1 overflow-x-auto pb-4">
-        <div className="inline-flex gap-4 min-w-[1300px] w-full items-start">
+        <div className="inline-flex gap-4 min-w-[1200px] w-full items-start">
           {PIPELINE_COLUMNS.map((column) => {
             const columnApps = groupedByStage[column.key] || [];
             const isTargetOver = dragOverColumn === column.key;
@@ -397,44 +407,44 @@ export default function RecruiterPipeline() {
                 onDragOver={(e) => handleDragOver(e, column.key)}
                 onDragLeave={(e) => handleDragLeave(e, column.key)}
                 onDrop={(e) => handleDrop(e, column.key)}
-                className={`flex flex-col w-[280px] shrink-0 rounded-2xl border transition-all duration-200 ${
+                className={`flex flex-col w-[260px] shrink-0 rounded-lg border transition-all duration-150 ${
                   isTargetOver
-                    ? 'border-blue-500 bg-blue-50/40 shadow-md ring-2 ring-blue-400/20'
-                    : 'border-slate-200 bg-slate-50/70'
+                    ? 'border-brand bg-brand-muted shadow-card'
+                    : isDark
+                      ? 'border-navy-700 bg-navy-800'
+                      : 'border-slate-200 bg-slate-50'
                 }`}
               >
-                {/* Column Header */}
-                <div className="flex items-center justify-between px-3.5 py-3 border-b border-slate-200/80 bg-white/70 rounded-t-2xl">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 rounded-full ${
-                      column.key === 'APPLIED' ? 'bg-blue-500' :
-                      column.key === 'SCREENING' ? 'bg-purple-500' :
-                      column.key === 'INTERVIEW' ? 'bg-amber-500' :
-                      column.key === 'OFFER' ? 'bg-pink-500' :
-                      column.key === 'HIRED' ? 'bg-emerald-500' : 'bg-rose-500'
-                    }`} />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                      {column.label}
-                    </h3>
+                 <div className="flex items-center justify-between px-3 py-2.5 border-b border-navy-700 bg-navy-900/50 rounded-t-lg">
+                   <div className="flex items-center gap-2">
+                     <span className={`h-2 w-2 rounded-full ${
+                       column.key === 'APPLIED' ? 'bg-sky-500' :
+                       column.key === 'SCREENING' ? 'bg-indigo-500' :
+                       column.key === 'INTERVIEW' ? 'bg-amber-500' :
+                       column.key === 'OFFER' ? 'bg-pink-500' :
+                       column.key === 'HIRED' ? 'bg-emerald-500' : 'bg-rose-500'
+                     }`} />
+                     <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                       {column.label}
+                     </h3>
                   </div>
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${column.badgeBg}`}>
                     {columnApps.length}
                   </span>
                 </div>
 
-                {/* Column Dropzone / Cards Container */}
-                <div className="flex flex-col gap-3 p-3 min-h-[500px] max-h-[calc(100vh-260px)] overflow-y-auto">
+                <div className="flex flex-col gap-2.5 p-2.5 min-h-[400px] max-h-[calc(100vh-240px)] overflow-y-auto">
                   {columnApps.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-32 rounded-xl border border-dashed border-slate-200 text-slate-400 text-center p-3">
-                      <p className="text-xs">Chưa có ứng viên</p>
-                      <p className="text-[10px] text-slate-400 mt-1">Kéo thả hồ sơ vào đây</p>
+                    <div className={`flex flex-col items-center justify-center h-24 rounded-lg border border-dashed text-center p-3 ${isDark ? 'border-navy-700 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
+                      <p className="text-xs">No candidates</p>
+                      <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Drag cards here</p>
                     </div>
                   ) : (
                     columnApps.map((app) => {
                       const candidate = app.candidateProfile;
                       const user = candidate?.user;
-                      const fullName = user?.fullName || 'Ứng viên chưa đặt tên';
-                      const position = candidate?.experience?.position || user?.email || 'Ứng viên';
+                      const fullName = user?.fullName || 'Unnamed candidate';
+                      const position = candidate?.experience?.position || user?.email || 'Candidate';
                       const isBeingDragged = draggedAppId === app.id;
 
                       return (
@@ -443,39 +453,36 @@ export default function RecruiterPipeline() {
                           draggable
                           onDragStart={(e) => handleDragStart(e, app.id, app.stage)}
                           onDragEnd={handleDragEnd}
-                          className={`group relative rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing ${
-                            isBeingDragged ? 'opacity-40 scale-95 border-dashed border-blue-400' : ''
-                          }`}
+                          className={`group relative rounded-lg border p-3 transition-all cursor-grab active:cursor-grabbing ${
+                            isBeingDragged ? 'opacity-40 scale-[0.98] border-dashed border-brand' : ''
+                          } ${isDark ? 'border-navy-700 bg-navy-850 hover:border-navy-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}
                         >
-                          {/* Drag handle indicator */}
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2">
-                              <div className="grid h-8 w-8 place-items-center rounded-lg bg-slate-100 text-xs font-bold text-slate-700">
+                              <div className={`grid h-7 w-7 place-items-center rounded text-[11px] font-bold ${isDark ? 'bg-navy-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                                 {getInitials(fullName)}
                               </div>
-                              <div className="max-w-[150px]">
-                                <h4 className="text-xs font-bold text-slate-900 truncate" title={fullName}>
+                              <div className="min-w-0">
+                                <h4 className={`truncate text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`} title={fullName}>
                                   {fullName}
                                 </h4>
-                                <p className="text-[11px] text-slate-500 truncate" title={position}>
+                                <p className="truncate text-[11px] text-slate-500" title={position}>
                                   {position}
                                 </p>
                               </div>
                             </div>
-                            <GripVertical className="h-4 w-4 text-slate-300 group-hover:text-slate-500 shrink-0" />
+                            <GripVertical className={`h-3.5 w-3.5 shrink-0 ${isDark ? 'text-slate-500 group-hover:text-slate-300' : 'text-slate-400 group-hover:text-slate-600'}`} />
                           </div>
 
-                          {/* Job Title */}
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 mb-2 truncate">
-                            <Briefcase className="h-3 w-3 text-slate-400 shrink-0" />
+                          <div className="flex items-center gap-1.5 text-[11px] mb-2.5 text-slate-500">
+                            <Briefcase className="h-3 w-3" />
                             <span className="truncate" title={app.job?.title}>
-                              {app.job?.title || 'Công việc'}
+                              {app.job?.title || 'Job'}
                             </span>
                           </div>
 
-                          {/* Score and Date */}
-                          <div className="flex items-center justify-between text-[11px] mb-3">
-                            <div className="flex items-center gap-1 text-slate-400">
+                          <div className="flex items-center justify-between text-[11px] mb-2.5">
+                            <div className="flex items-center gap-1 text-slate-500">
                               <Calendar className="h-3 w-3" />
                               <span>{formatDate(app.createdAt)}</span>
                             </div>
@@ -484,7 +491,6 @@ export default function RecruiterPipeline() {
                             )}
                           </div>
 
-                          {/* Schedule Interview Button if in INTERVIEW stage */}
                           {app.stage === 'INTERVIEW' && (
                             <button
                               type="button"
@@ -496,21 +502,19 @@ export default function RecruiterPipeline() {
                                   jobTitle: app.job?.title || '',
                                 });
                               }}
-                              className="w-full mb-2.5 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 border border-amber-200 py-1.5 text-[11px] font-bold text-amber-800 hover:bg-amber-100 transition shadow-sm"
+                              className="w-full mb-2 inline-flex items-center justify-center gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 py-1.5 text-[11px] font-bold text-amber-400 transition hover:bg-amber-500/20"
                             >
-                              <CalendarPlus className="h-3.5 w-3.5 text-amber-600" />
-                              <span>Lên lịch phỏng vấn</span>
+                              <CalendarPlus className="h-3.5 w-3.5" />
+                              Schedule interview
                             </button>
                           )}
 
-                          {/* Action Footer */}
-                          <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
-                            {/* Quick Stage Select for Accessibility/Alternative to Drag */}
+                          <div className="flex items-center justify-between pt-2 border-t border-navy-700 gap-2">
                             <select
                               value={app.stage}
                               onChange={(e) => handleStageChange(app.id, e.target.value, app.stage)}
-                              className="text-[11px] rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600 focus:outline-none focus:border-blue-400 max-w-[120px]"
-                              title="Chuyển giai đoạn nhanh"
+                              className={`text-[11px] rounded border px-2 py-1 outline-none focus:border-brand max-w-[120px] ${isDark ? 'border-navy-700 bg-navy-900 text-slate-300' : 'border-slate-200 bg-white text-slate-700'}`}
+                              title="Quick stage update"
                             >
                               {PIPELINE_COLUMNS.map((col) => (
                                 <option key={col.key} value={col.key}>
@@ -519,16 +523,15 @@ export default function RecruiterPipeline() {
                               ))}
                             </select>
 
-                            {/* View Candidate Button */}
                             {user?.id && (
                               <button
                                 type="button"
                                 onClick={() => navigate(`/recruiter/candidates/${user.id}`)}
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition"
-                                title="Xem chi tiết hồ sơ ứng viên"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand hover:text-brand-light transition"
+                                title="View candidate profile"
                               >
                                 <Eye className="h-3 w-3" />
-                                <span>Xem</span>
+                                <span>View</span>
                               </button>
                             )}
                           </div>
@@ -543,7 +546,6 @@ export default function RecruiterPipeline() {
         </div>
       </div>
 
-      {/* Schedule Interview Modal */}
       {scheduleModalApp && (
         <ScheduleInterviewModal
           isOpen={Boolean(scheduleModalApp)}
@@ -553,7 +555,7 @@ export default function RecruiterPipeline() {
           jobTitle={scheduleModalApp.jobTitle}
           onSuccess={() => {
             setToast({
-              message: `Đã tạo lịch phỏng vấn cho ${scheduleModalApp.candidateName}`,
+              message: `Interview scheduled for ${scheduleModalApp.candidateName}`,
               type: 'success',
             });
             setScheduleModalApp(null);

@@ -1,21 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Video, 
-  User, 
-  Building2, 
-  ExternalLink, 
-  RefreshCw, 
-  CheckCircle2, 
-  XCircle,
-  BriefcaseBusiness,
-  AlertCircle
-} from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Calendar, CheckCircle2, Clock, MapPin, RefreshCw, User, Video, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { formatDateTime, getErrorMessage } from '../../utils/formatters';
+import Card from '../../components/ui/Card';
+import Badge from '../../components/ui/Badge';
+import EmptyState from '../../components/ui/EmptyState';
+import Skeleton from '../../components/ui/Skeleton';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
 interface CandidateInterviewItem {
   id: string;
@@ -44,12 +37,16 @@ interface CandidateInterviewItem {
 
 export default function CandidateInterviews() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const [interviews, setInterviews] = useState<CandidateInterviewItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'>('ALL');
+
+  const isLoading = useMinimumLoading(dataLoaded, 1000);
 
   useEffect(() => {
     let active = true;
@@ -63,12 +60,12 @@ export default function CandidateInterviews() {
       })
       .catch((err) => {
         if (active) {
-          setError(getErrorMessage(err) || 'Không thể tải danh sách phỏng vấn.');
+          setError(getErrorMessage(err) || 'Unable to load interviews.');
         }
       })
       .finally(() => {
         if (active) {
-          setLoading(false);
+          setDataLoaded(true);
         }
       });
 
@@ -85,7 +82,7 @@ export default function CandidateInterviews() {
         setError('');
       })
       .catch((err) => {
-        setError(getErrorMessage(err) || 'Không thể tải danh sách phỏng vấn.');
+        setError(getErrorMessage(err) || 'Unable to load interviews.');
       })
       .finally(() => {
         setRefreshing(false);
@@ -102,44 +99,140 @@ export default function CandidateInterviews() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-            <CheckCircle2 className="h-3 w-3" /> Đã hoàn thành
-          </span>
-        );
+        return <Badge variant="success"><span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Completed</span></Badge>;
       case 'CANCELLED':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
-            <XCircle className="h-3 w-3" /> Đã hủy
-          </span>
-        );
+        return <Badge variant="danger"><span className="flex items-center gap-1"><XCircle className="h-3 w-3" /> Cancelled</span></Badge>;
       default:
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-            <Clock className="h-3 w-3" /> Sắp diễn ra
-          </span>
-        );
+        return <Badge variant="brand"><span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Scheduled</span></Badge>;
     }
   };
 
-  if (loading) {
+  const renderInterviewCard = (item: CandidateInterviewItem) => {
+    const job = item.application?.job;
+    const isOnline = (item.type || 'ONLINE').toUpperCase() === 'ONLINE';
+    const isLink = item.locationOrLink?.startsWith('http://') || item.locationOrLink?.startsWith('https://');
+
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center text-slate-500">
-        <RefreshCw className="h-8 w-8 animate-spin text-indigo-600 mb-3" />
-        <p className="text-sm font-medium">Đang tải lịch phỏng vấn của bạn...</p>
+      <Card key={item.id} padding="lg">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${isDark ? 'bg-brand-muted text-brand-light' : 'bg-blue-50 text-blue-600'}`}>
+              <Video className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">{job?.title || 'Job'}</h2>
+                {getStatusBadge(item.status || 'SCHEDULED')}
+              </div>
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                {job?.company?.name || 'Company'} · {job?.location || 'Remote'}
+              </p>
+            </div>
+          </div>
+
+          <div className={`rounded-lg border px-3.5 py-2 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-200">
+              <Calendar className="h-3.5 w-3.5 text-brand" />
+              <span>{formatDateTime(item.scheduledAt)}</span>
+            </div>
+            <span className={`text-[11px] mt-0.5 block ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {isOnline ? 'Online interview' : 'On-site interview'}
+            </span>
+          </div>
+        </div>
+
+        <div className={`mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3 text-xs ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+          <div className="flex items-center gap-2">
+            {isOnline ? (
+              <Video className="h-4 w-4 text-brand shrink-0" />
+            ) : (
+              <MapPin className="h-4 w-4 text-emerald-500 shrink-0" />
+            )}
+            <div className="flex-1 truncate">
+              <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                {isOnline ? 'Meeting link' : 'Location'}
+              </span>
+              {isLink ? (
+                <a
+                  href={item.locationOrLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded bg-brand px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-brand-dark transition mt-0.5"
+                >
+                  <span>Join meeting</span>
+                </a>
+              ) : (
+                <span className="font-semibold text-slate-900 dark:text-slate-200 block mt-0.5">{item.locationOrLink}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-amber-500 shrink-0" />
+            <div>
+              <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Interviewer</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-200">{item.interviewerName}</span>
+            </div>
+          </div>
+        </div>
+
+        {item.notes && (
+          <div className={`mt-3 text-xs rounded-lg border p-2.5 ${isDark ? 'text-slate-400 bg-amber-500/5 border-amber-500/20' : 'text-slate-600 bg-amber-50 border-amber-200'}`}>
+            <strong className="text-amber-500">Note:</strong> {item.notes}
+          </div>
+        )}
+      </Card>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <Skeleton key={idx} className="h-8 w-24 rounded-md" />
+          ))}
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <Card key={idx} padding="lg">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                </div>
+                <Skeleton className="h-16 w-40 rounded-lg" />
+              </div>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      {/* Header */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">Candidate workspace</p>
-          <h1 className="mt-1 text-3xl font-black text-slate-900 tracking-tight">Lịch phỏng vấn của tôi</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Theo dõi thời gian, hình thức và thông tin các buổi phỏng vấn tuyển dụng.
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Candidate workspace</p>
+          <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">My interviews</h1>
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+            Track your interview schedule, time, and details.
           </p>
         </div>
 
@@ -147,154 +240,62 @@ export default function CandidateInterviews() {
           type="button"
           onClick={handleRefresh}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 dark:border-navy-700 dark:bg-navy-800 dark:text-slate-300 dark:hover:border-navy-600 disabled:opacity-50"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-indigo-600' : ''}`} />
-          <span>Làm mới</span>
+          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-brand' : ''}`} />
+          <span>Refresh</span>
         </button>
-      </header>
+      </div>
 
-      {/* Error Banner */}
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <Card className="flex items-center gap-2 text-xs font-semibold text-rose-600 dark:text-rose-400">
           <span>{error}</span>
-        </div>
+        </Card>
       )}
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <div className={`flex flex-wrap gap-2 rounded-lg border p-3.5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
         {[
-          { key: 'ALL', label: 'Tất cả', count: interviews.length },
-          { key: 'SCHEDULED', label: 'Sắp diễn ra', count: interviews.filter((i) => (i.status || 'SCHEDULED') === 'SCHEDULED').length },
-          { key: 'COMPLETED', label: 'Đã hoàn thành', count: interviews.filter((i) => i.status === 'COMPLETED').length },
-          { key: 'CANCELLED', label: 'Đã hủy', count: interviews.filter((i) => i.status === 'CANCELLED').length },
+          { key: 'ALL', label: 'All', count: interviews.length },
+          { key: 'SCHEDULED', label: 'Scheduled', count: interviews.filter((i) => (i.status || 'SCHEDULED') === 'SCHEDULED').length },
+          { key: 'COMPLETED', label: 'Completed', count: interviews.filter((i) => i.status === 'COMPLETED').length },
+          { key: 'CANCELLED', label: 'Cancelled', count: interviews.filter((i) => i.status === 'CANCELLED').length },
         ].map((tab) => (
           <button
             key={tab.key}
             type="button"
-            onClick={() => setStatusFilter(tab.key as any)}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+            onClick={() => setStatusFilter(tab.key as 'ALL' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED')}
+            className={`rounded-md px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
               statusFilter === tab.key
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'bg-brand text-white'
+                : isDark
+                  ? 'bg-navy-800 border border-navy-700 text-slate-300 hover:border-navy-600'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
             }`}
           >
             <span>{tab.label}</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === tab.key ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-500'}`}>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === tab.key ? 'bg-white/20 text-white' : isDark ? 'bg-navy-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
               {tab.count}
             </span>
           </button>
         ))}
       </div>
 
-      {/* Content */}
       {filteredInterviews.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center">
-          <BriefcaseBusiness className="mx-auto h-10 w-10 text-slate-300 mb-3" />
-          <h3 className="text-base font-bold text-slate-800">Chưa có lịch phỏng vấn nào</h3>
-          <p className="mt-1 text-xs text-slate-500">
-            Khi nhà tuyển dụng lên lịch phỏng vấn cho đơn ứng tuyển của bạn, thông tin sẽ xuất hiện tại đây.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/candidate/jobs')}
-            className="mt-4 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 transition"
-          >
-            Khám phá việc làm
-          </button>
-        </div>
+        <Card>
+          <EmptyState
+            icon={<Calendar className="h-8 w-8" />}
+            title="No interviews yet"
+            description="When recruiters schedule interviews for your applications, they will appear here."
+            action={
+              <button type="button" onClick={() => navigate('/candidate/jobs')} className="mt-4 rounded-md bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark">
+                Browse jobs
+              </button>
+            }
+          />
+        </Card>
       ) : (
-        <div className="grid gap-4">
-          {filteredInterviews.map((item) => {
-            const job = item.application?.job;
-            const isOnline = (item.type || 'ONLINE').toUpperCase() === 'ONLINE';
-            const isLink = item.locationOrLink.startsWith('http://') || item.locationOrLink.startsWith('https://');
-
-            return (
-              <article
-                key={item.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all space-y-4"
-              >
-                {/* Header Row */}
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-base font-bold text-slate-900">{job?.title || 'Tin tuyển dụng'}</h2>
-                        {getStatusBadge(item.status || 'SCHEDULED')}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {job?.company?.name || 'Doanh nghiệp'} · {job?.location || 'Việt Nam'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Scheduled Time Banner */}
-                  <div className="sm:text-right bg-indigo-50/60 border border-indigo-100 rounded-xl px-4 py-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900 sm:justify-end">
-                      <Calendar className="h-3.5 w-3.5 text-indigo-600" />
-                      <span>{formatDateTime(item.scheduledAt)}</span>
-                    </div>
-                    <span className="text-[11px] text-indigo-500 mt-0.5 block">
-                      {isOnline ? '🌐 Phỏng vấn trực tuyến' : '🏢 Phỏng vấn trực tiếp'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Meeting Details Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3.5 text-xs border border-slate-100">
-                  {/* Location or Link */}
-                  <div className="flex items-start gap-2.5">
-                    {isOnline ? (
-                      <Video className="h-4 w-4 text-purple-500 mt-0.5 shrink-0" />
-                    ) : (
-                      <MapPin className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                    )}
-                    <div className="flex-1 truncate">
-                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">
-                        {isOnline ? 'Link cuộc họp trực tuyến' : 'Địa điểm phỏng vấn'}
-                      </span>
-                      {isLink ? (
-                        <div className="mt-1">
-                          <a
-                            href={item.locationOrLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition"
-                          >
-                            <span>Tham gia cuộc họp</span>
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        </div>
-                      ) : (
-                        <p className="font-semibold text-slate-800 mt-0.5">{item.locationOrLink}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Interviewer */}
-                  <div className="flex items-start gap-2.5">
-                    <User className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                    <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Người phỏng vấn</span>
-                      <p className="font-semibold text-slate-800 mt-0.5">{item.interviewerName}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {item.notes && (
-                  <div className="text-xs text-slate-600 bg-amber-50/70 border border-amber-100 rounded-lg p-2.5">
-                    <strong className="text-amber-800">Lưu ý từ nhà tuyển dụng:</strong> {item.notes}
-                  </div>
-                )}
-              </article>
-            );
-          })}
+        <div className="grid gap-3">
+          {filteredInterviews.map((item) => renderInterviewCard(item))}
         </div>
       )}
     </div>
