@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Building2, BriefcaseBusiness, FileText, MapPin, Search, X } from 'lucide-react';
 import api from '../../api/axios';
 
@@ -24,7 +25,7 @@ export default function JobList() {
   const [location, setLocation] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
+  const { theme } = useTheme();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -34,12 +35,6 @@ export default function JobList() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isDark = theme === 'dark';
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
 
   useEffect(() => {
     api
@@ -268,3 +263,6 @@ export default function JobList() {
     </div>
   );
 }
+
+
+

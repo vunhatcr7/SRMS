@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -51,14 +52,7 @@ export default function CandidateDetail() {
   const [profile, setProfile] = useState<CandidateProfileDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
-
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   useEffect(() => {
@@ -235,3 +229,5 @@ export default function CandidateDetail() {
     </div>
   );
 }
+
+

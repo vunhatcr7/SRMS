@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import {
   FileText,
@@ -62,15 +63,8 @@ export default function AIMatching() {
   const [isApplying, setIsApplying] = useState(false);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<{ message: string; isSuccess: boolean } | null>(null);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
 
   const showToast = (text: string, success: boolean) => {
     setToast({ message: text, isSuccess: success });
@@ -526,3 +520,4 @@ export default function AIMatching() {
     </div>
   );
 }
+

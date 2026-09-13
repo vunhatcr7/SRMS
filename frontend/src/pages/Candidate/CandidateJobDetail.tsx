@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { AlertCircle, ArrowLeft, Briefcase, Building2, CheckCircle2, FileText, MapPin, RefreshCw } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
@@ -25,13 +26,7 @@ export default function CandidateJobDetail() {
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState<{ message: string; success: boolean } | null>(null);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
+  const { theme } = useTheme();
 
   const isDark = theme === 'dark';
 
@@ -131,3 +126,5 @@ export default function CandidateJobDetail() {
     </div>
   );
 }
+
+

@@ -1,21 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Video,
-  User,
-  Building2,
-  ExternalLink,
-  RefreshCw,
-  CheckCircle2,
-  XCircle,
-  BriefcaseBusiness,
-  AlertCircle,
-} from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Calendar, Clock, MapPin, Video, User, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { formatDateTime, getErrorMessage } from '../../utils/formatters';
+import Card from '../../components/ui/Card';
+import Badge from '../../components/ui/Badge';
+import EmptyState from '../../components/ui/EmptyState';
 
 interface CandidateInterviewItem {
   id: string;
@@ -44,21 +35,14 @@ interface CandidateInterviewItem {
 
 export default function CandidateInterviews() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const [interviews, setInterviews] = useState<CandidateInterviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'>('ALL');
-
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-  const isDark = theme === 'dark';
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -111,23 +95,11 @@ export default function CandidateInterviews() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return (
-          <span className="inline-flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
-            <CheckCircle2 className="h-3 w-3" /> Completed
-          </span>
-        );
+        return <Badge variant="success"><span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Completed</span></Badge>;
       case 'CANCELLED':
-        return (
-          <span className="inline-flex items-center gap-1 rounded border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[11px] font-semibold text-rose-400">
-            <XCircle className="h-3 w-3" /> Cancelled
-          </span>
-        );
+        return <Badge variant="danger"><span className="flex items-center gap-1"><XCircle className="h-3 w-3" /> Cancelled</span></Badge>;
       default:
-        return (
-          <span className="inline-flex items-center gap-1 rounded border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[11px] font-semibold text-sky-400">
-            <Clock className="h-3 w-3" /> Scheduled
-          </span>
-        );
+        return <Badge variant="brand"><span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Scheduled</span></Badge>;
     }
   };
 
@@ -144,9 +116,9 @@ export default function CandidateInterviews() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">Candidate workspace</p>
-          <h1 className="mt-2 text-2xl font-bold text-slate-100">My interviews</h1>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Candidate workspace</p>
+          <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">My interviews</h1>
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
             Track your interview schedule, time, and details.
           </p>
         </div>
@@ -155,7 +127,7 @@ export default function CandidateInterviews() {
           type="button"
           onClick={handleRefresh}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 rounded border border-navy-700 bg-navy-800 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-navy-600 hover:text-slate-100 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 dark:border-navy-700 dark:bg-navy-800 dark:text-slate-300 dark:hover:border-navy-600 disabled:opacity-50"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-brand' : ''}`} />
           <span>Refresh</span>
@@ -163,56 +135,51 @@ export default function CandidateInterviews() {
       </div>
 
       {error && (
-        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-semibold text-rose-400 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <Card className="flex items-center gap-2 text-xs font-semibold text-rose-600 dark:text-rose-400">
           <span>{error}</span>
-        </div>
+        </Card>
       )}
 
-      <div className={`rounded-lg border p-3.5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-        <div className="flex flex-wrap gap-2 border-b border-navy-700 pb-3">
-          {[
-            { key: 'ALL', label: 'All', count: interviews.length },
-            { key: 'SCHEDULED', label: 'Scheduled', count: interviews.filter((i) => (i.status || 'SCHEDULED') === 'SCHEDULED').length },
-            { key: 'COMPLETED', label: 'Completed', count: interviews.filter((i) => i.status === 'COMPLETED').length },
-            { key: 'CANCELLED', label: 'Cancelled', count: interviews.filter((i) => i.status === 'CANCELLED').length },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setStatusFilter(tab.key as 'ALL' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED')}
-              className={`rounded px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
-                statusFilter === tab.key
-                  ? 'bg-brand text-white'
-                  : isDark
-                    ? 'bg-navy-800 border border-navy-700 text-slate-300 hover:border-navy-600'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
-              }`}
-            >
-              <span>{tab.label}</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === tab.key ? 'bg-brand-dark text-white' : isDark ? 'bg-navy-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
-        </div>
+      <div className={`flex flex-wrap gap-2 rounded-lg border p-3.5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+        {[
+          { key: 'ALL', label: 'All', count: interviews.length },
+          { key: 'SCHEDULED', label: 'Scheduled', count: interviews.filter((i) => (i.status || 'SCHEDULED') === 'SCHEDULED').length },
+          { key: 'COMPLETED', label: 'Completed', count: interviews.filter((i) => i.status === 'COMPLETED').length },
+          { key: 'CANCELLED', label: 'Cancelled', count: interviews.filter((i) => i.status === 'CANCELLED').length },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setStatusFilter(tab.key as 'ALL' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED')}
+            className={`rounded-md px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+              statusFilter === tab.key
+                ? 'bg-brand text-white'
+                : isDark
+                  ? 'bg-navy-800 border border-navy-700 text-slate-300 hover:border-navy-600'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === tab.key ? 'bg-white/20 text-white' : isDark ? 'bg-navy-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
       </div>
 
       {filteredInterviews.length === 0 ? (
-        <div className={`rounded-lg border border-dashed p-12 text-center ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <BriefcaseBusiness className="mx-auto h-10 w-10 text-slate-500 mb-3" />
-          <h3 className="text-sm font-bold text-slate-200">No interviews yet</h3>
-          <p className="mt-1 text-xs text-slate-400">
-            When recruiters schedule interviews for your applications, they will appear here.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/candidate/jobs')}
-            className="mt-4 rounded bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark"
-          >
-            Browse jobs
-          </button>
-        </div>
+        <Card>
+          <EmptyState
+            icon={<Calendar className="h-8 w-8" />}
+            title="No interviews yet"
+            description="When recruiters schedule interviews for your applications, they will appear here."
+            action={
+              <button type="button" onClick={() => navigate('/candidate/jobs')} className="mt-4 rounded-md bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark">
+                Browse jobs
+              </button>
+            }
+          />
+        </Card>
       ) : (
         <div className="grid gap-3">
           {filteredInterviews.map((item) => {
@@ -221,18 +188,15 @@ export default function CandidateInterviews() {
             const isLink = item.locationOrLink.startsWith('http://') || item.locationOrLink.startsWith('https://');
 
             return (
-              <article
-                key={item.id}
-                className={`rounded-lg border p-4 transition ${isDark ? 'border-navy-700 bg-navy-800 hover:border-navy-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-              >
+              <Card key={item.id} padding="lg">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${isDark ? 'bg-brand-muted text-brand-light' : 'bg-blue-50 text-blue-600'}`}>
-                      <Building2 className="h-5 w-5" />
+                      <Video className="h-5 w-5" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-sm font-bold text-slate-100">{job?.title || 'Job'}</h2>
+                        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">{job?.title || 'Job'}</h2>
                         {getStatusBadge(item.status || 'SCHEDULED')}
                       </div>
                       <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -241,8 +205,8 @@ export default function CandidateInterviews() {
                     </div>
                   </div>
 
-                  <div className={`sm:text-right rounded-lg border px-3.5 py-2 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 sm:justify-end">
+                  <div className={`rounded-lg border px-3.5 py-2 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-200">
                       <Calendar className="h-3.5 w-3.5 text-brand" />
                       <span>{formatDateTime(item.scheduledAt)}</span>
                     </div>
@@ -271,10 +235,9 @@ export default function CandidateInterviews() {
                           className="inline-flex items-center gap-1 rounded bg-brand px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-brand-dark transition mt-0.5"
                         >
                           <span>Join meeting</span>
-                          <ExternalLink className="h-3 w-3 shrink-0" />
                         </a>
                       ) : (
-                        <span className="font-semibold text-slate-200 block mt-0.5">{item.locationOrLink}</span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-200 block mt-0.5">{item.locationOrLink}</span>
                       )}
                     </div>
                   </div>
@@ -283,7 +246,7 @@ export default function CandidateInterviews() {
                     <User className="h-4 w-4 text-amber-500 shrink-0" />
                     <div>
                       <span className={`block text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Interviewer</span>
-                      <span className="font-semibold text-slate-200">{item.interviewerName}</span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-200">{item.interviewerName}</span>
                     </div>
                   </div>
                 </div>
@@ -293,7 +256,7 @@ export default function CandidateInterviews() {
                     <strong className="text-amber-500">Note:</strong> {item.notes}
                   </div>
                 )}
-              </article>
+              </Card>
             );
           })}
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Briefcase,
@@ -12,8 +12,10 @@ import {
   ChevronDown,
   User as UserIcon,
   Sun,
-  Moon
+  Moon,
 } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
+import Avatar from '../ui/Avatar';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -28,14 +30,11 @@ interface UserData {
 export default function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, toggle } = useTheme();
+  const isDark = theme === 'dark';
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const savedTheme = localStorage.getItem('srms-theme');
-    return savedTheme === 'light' ? 'light' : 'dark';
-  });
-
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [user, setUser] = useState<UserData | null>(() => {
@@ -74,12 +73,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem('srms-theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-    window.dispatchEvent(new CustomEvent('srms-theme-change', { detail: theme }));
-  }, [theme]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -126,13 +119,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   ? 'Interviews'
                   : 'Overview';
 
-  const isDarkTheme = theme === 'dark';
-
   return (
-    <div className={`flex h-screen overflow-hidden antialiased ${isDarkTheme ? 'bg-navy-850 text-slate-100' : 'bg-slate-100 text-slate-800'}`}>
+    <div className={`flex h-screen overflow-hidden antialiased ${isDark ? 'bg-navy-900 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       <aside
         className={`${isCollapsed ? 'w-16' : 'w-56'} flex flex-col justify-between border-r transition-all duration-200 ${
-          isDarkTheme ? 'border-navy-700 bg-navy-900' : 'border-slate-200 bg-white'
+          isDark ? 'border-navy-700 bg-navy-900' : 'border-slate-200 bg-white'
         }`}
       >
         <div className="px-3 py-3">
@@ -142,7 +133,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </div>
             {!isCollapsed && (
               <div className="ml-2.5 leading-none">
-                <div className={`text-[13px] font-bold tracking-tight ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>
+                <div className={`text-[13px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   SRMS
                 </div>
               </div>
@@ -158,12 +149,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <button
                   key={item.path + item.text}
                   onClick={() => navigate(item.path)}
-                  className={`flex w-full items-center rounded px-3 py-2 text-left transition ${
+                  className={`flex w-full items-center rounded-md px-3 py-2 text-left transition ${
                     isCollapsed ? 'justify-center px-0' : ''
                   } ${
                     isActive
                       ? 'bg-brand text-white'
-                      : isDarkTheme
+                      : isDark
                         ? 'text-slate-400 hover:bg-navy-800 hover:text-slate-200'
                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
@@ -180,8 +171,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <div className="px-3 py-3">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`flex w-full items-center justify-center rounded border px-3 py-2 text-xs transition ${
-              isDarkTheme ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
+            className={`flex w-full items-center justify-center rounded-md border px-3 py-2 text-xs transition ${
+              isDark ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
             }`}
             title={isCollapsed ? 'Expand menu' : 'Collapse menu'}
           >
@@ -194,17 +185,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <div className="flex flex-1 flex-col overflow-hidden">
         <header
           className={`flex h-14 items-center justify-between border-b px-5 ${
-            isDarkTheme ? 'border-navy-700 bg-navy-900' : 'border-slate-200 bg-white'
+            isDark ? 'border-navy-700 bg-navy-900' : 'border-slate-200 bg-white'
           }`}
         >
           <div className="flex items-center gap-4">
             <div className="relative w-64 hidden sm:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search..."
-                className={`w-full rounded border py-2 pl-9 pr-3 text-sm outline-none transition ${
-                  isDarkTheme
+                className={`w-full rounded-md border py-2 pl-9 pr-3 text-sm outline-none transition ${
+                  isDark
                     ? 'border-navy-700 bg-navy-800 text-slate-200 placeholder:text-slate-500 focus:border-brand'
                     : 'border-slate-200 bg-slate-50 text-slate-700 placeholder:text-slate-400 focus:border-brand'
                 }`}
@@ -215,19 +206,19 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
-              className={`flex h-8 w-8 items-center justify-center rounded border transition ${
-                isDarkTheme ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
+              onClick={toggle}
+              className={`flex h-8 w-8 items-center justify-center rounded-md border transition ${
+                isDark ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
               }`}
               aria-label="Toggle theme"
-              title={isDarkTheme ? 'Light mode' : 'Dark mode'}
+              title={isDark ? 'Light mode' : 'Dark mode'}
             >
-              {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
 
             <button
-              className={`relative rounded border p-2 transition ${
-                isDarkTheme ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
+              className={`relative rounded-md border p-2 transition ${
+                isDark ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
               }`}
               aria-label="Notifications"
             >
@@ -238,35 +229,33 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className={`flex items-center gap-2.5 rounded border px-2 py-1.5 text-left transition ${
-                  isDarkTheme ? 'border-navy-700 bg-navy-800 hover:bg-navy-750' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                className={`flex items-center gap-2.5 rounded-md border px-2 py-1.5 text-left transition ${
+                  isDark ? 'border-navy-700 bg-navy-800 hover:bg-navy-750' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
                 }`}
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
-                  {activeUser.fullName.charAt(0).toUpperCase()}
-                </div>
+                <Avatar initials={activeUser.fullName.charAt(0).toUpperCase()} size="sm" />
                 <div className="hidden text-left md:block">
-                  <div className={`text-xs font-semibold ${isDarkTheme ? 'text-slate-200' : 'text-slate-900'}`}>
+                  <div className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
                     {activeUser.fullName}
                   </div>
-                  <div className={`text-[10px] uppercase tracking-wider ${isDarkTheme ? 'text-slate-500' : 'text-slate-500'}`}>
+                  <div className={`text-[10px] uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                     {activeUser.role}
                   </div>
                 </div>
-                <ChevronDown className={`h-3 w-3 transition ${isDropdownOpen ? 'rotate-180' : ''} ${isDarkTheme ? 'text-slate-500' : 'text-slate-400'}`} />
+                <ChevronDown className={`h-3 w-3 transition ${isDropdownOpen ? 'rotate-180' : ''} ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
               </button>
 
               {isDropdownOpen && (
                 <div
-                  className={`absolute right-0 z-40 mt-2 w-48 rounded border p-1 shadow-lg ${
-                    isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'
+                  className={`absolute right-0 z-40 mt-2 w-48 rounded-md border p-1 shadow-lg ${
+                    isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'
                   }`}
                 >
-                  <div className={`border-b px-3 py-2 ${isDarkTheme ? 'border-navy-700' : 'border-slate-200'}`}>
-                    <div className={`text-[10px] uppercase tracking-wider ${isDarkTheme ? 'text-slate-500' : 'text-slate-400'}`}>
+                  <div className={`border-b px-3 py-2 ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
+                    <div className={`text-[10px] uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                       Signed in as
                     </div>
-                    <div className={`mt-1 truncate text-xs font-medium ${isDarkTheme ? 'text-slate-300' : 'text-slate-700'}`}>
+                    <div className={`mt-1 truncate text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       {activeUser.email}
                     </div>
                   </div>
@@ -277,7 +266,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                       navigate('/recruiter');
                     }}
                     className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition ${
-                      isDarkTheme ? 'text-slate-300 hover:bg-navy-750 hover:text-slate-100' : 'text-slate-700 hover:bg-slate-100'
+                      isDark ? 'text-slate-300 hover:bg-navy-750 hover:text-slate-100' : 'text-slate-700 hover:bg-slate-100'
                     }`}
                   >
                     <UserIcon className="h-3.5 w-3.5 text-slate-400" />
@@ -290,7 +279,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                       handleLogout();
                     }}
                     className={`flex w-full items-center gap-2 border-t px-3 py-2 text-left text-xs font-semibold transition ${
-                      isDarkTheme ? 'border-navy-700 text-rose-400 hover:bg-rose-500/10' : 'border-slate-200 text-rose-600 hover:bg-rose-50'
+                      isDark ? 'border-navy-700 text-rose-400 hover:bg-rose-500/10' : 'border-slate-200 text-rose-600 hover:bg-rose-50'
                     }`}
                   >
                     <LogOut className="h-3.5 w-3.5" />
@@ -302,8 +291,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </div>
         </header>
 
-        <main className={`flex-1 overflow-y-auto p-6 ${isDarkTheme ? 'bg-navy-850' : 'bg-slate-100'}`}>
-          <div className="mx-auto max-w-[1200px]">{children}</div>
+        <main className={`flex-1 overflow-y-auto ${isDark ? 'bg-navy-900' : 'bg-slate-50'}`}>
+          <div className="mx-auto max-w-[1200px] p-6">{children}</div>
         </main>
       </div>
     </div>

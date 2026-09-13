@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, BriefcaseBusiness, Building2, Calendar, RefreshCw } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
-import { formatDate, getScoreColor, getStageColor, getStageLabel } from '../../utils/formatters';
+import { getStageLabel } from '../../utils/formatters';
+import Card from '../../components/ui/Card';
+import Badge from '../../components/ui/Badge';
+import EmptyState from '../../components/ui/EmptyState';
 
 interface Application {
   id: string;
@@ -14,18 +18,11 @@ interface Application {
 
 export default function CandidateApplications() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
-
-  const isDark = theme === 'dark';
 
   useEffect(() => {
     let active = true;
@@ -36,80 +33,85 @@ export default function CandidateApplications() {
     return () => { active = false; };
   }, []);
 
-  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading applications...</div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />
+        <span className="text-sm text-slate-500">Loading applications...</span>
+      </div>
+    );
+  }
+
+  const inProgress = applications.filter(a => ['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER'].includes(a.stage)).length;
+  const interviews = applications.filter(a => a.stage === 'INTERVIEW').length;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-8">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">Candidate workspace</p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-100">My applications</h1>
-        <p className="mt-2 text-sm text-slate-400">Track your application stages and matching results.</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Your journey</p>
+        <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">My applications</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Track the roles you're exploring and the next step for each application.</p>
       </div>
 
-      {error && <div className={`rounded-lg border p-4 text-sm ${isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{error}</div>}
+      {error && <Card className="text-sm text-rose-600 dark:text-rose-400">{error}</Card>}
 
-      {!error && applications.length === 0 && (
-        <div className={`rounded-lg border border-dashed p-12 text-center ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <BriefcaseBusiness className="mx-auto h-9 w-9 text-slate-500" />
-          <h2 className={`mt-3 font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>No applications yet</h2>
-          <p className="mt-1 text-sm text-slate-400">Explore active jobs and submit your first application.</p>
-          <button type="button" onClick={() => navigate('/candidate/jobs')} className="mt-5 rounded bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark">
-            Browse jobs
-          </button>
-        </div>
-      )}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total applications</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{applications.length}</p>
+        </Card>
+        <Card>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">In progress</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{inProgress}</p>
+        </Card>
+        <Card>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Interviews</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{interviews}</p>
+        </Card>
+      </div>
 
-      <div className="space-y-3">
-        {applications.map((application) => (
-          <article key={application.id} className={`rounded-lg border p-4 transition ${isDark ? 'border-navy-700 bg-navy-800 hover:border-navy-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-              <div className="flex items-start gap-3">
-                <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${isDark ? 'bg-brand-muted text-brand-light' : 'bg-blue-50 text-blue-600'}`}>
-                  <Building2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-slate-100">{application.job.title}</h2>
-                  <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+      {applications.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={<BriefcaseBusiness className="h-8 w-8" />}
+            title="No applications yet"
+            description="Explore active jobs and submit your first application."
+            action={
+              <button type="button" onClick={() => navigate('/candidate/jobs')} className="mt-4 rounded-md bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark">
+                Find more roles
+              </button>
+            }
+          />
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {applications.map((application) => (
+            <Card key={application.id} padding="none" className="overflow-hidden">
+              <div className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center">
+                <div className="flex-1">
+                  <h2 className="font-semibold text-slate-900 dark:text-slate-100">{application.job.title}</h2>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                     {application.job.company?.name || 'Company'} · {application.job.location}
                   </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Applied {formatDate(application.createdAt)}</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Applied {new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(new Date(application.createdAt))}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge variant="slate">{getStageLabel(application.stage)}</Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className={`rounded border px-2.5 py-1 text-xs font-semibold ${getStageColor(application.stage)}`}>
-                  {getStageLabel(application.stage)}
-                </span>
-                {typeof application.matchingScore === 'number' && (
-                  <span className={`text-sm font-bold ${getScoreColor(application.matchingScore)}`}>
-                    {Math.round(application.matchingScore)}%
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between gap-2 border-t border-navy-700 pt-3">
-              <button
-                type="button"
-                onClick={() => navigate(`/candidate/applications/${application.id}`)}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light transition"
-              >
-                View details <ArrowRight className="h-4 w-4" />
-              </button>
-
-              {application.stage === 'INTERVIEW' && (
+              <div className={`flex items-center justify-between gap-2 border-t px-4 py-3 ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
                 <button
                   type="button"
-                  onClick={() => navigate('/candidate/interviews')}
-                  className="inline-flex items-center gap-1.5 rounded border border-brand/30 bg-brand-muted px-3 py-1.5 text-xs font-bold text-brand-light hover:bg-brand-muted"
+                  onClick={() => navigate(`/candidate/applications/${application.id}`)}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light transition"
                 >
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>View interview schedule</span>
+                  View details <ArrowRight className="h-4 w-4" />
                 </button>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

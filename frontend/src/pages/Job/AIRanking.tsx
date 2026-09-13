@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -75,14 +76,8 @@ export default function AIRanking() {
   const [updatingStageId, setUpdatingStageId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; isSuccess: boolean } | null>(null);
 
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
 
   useEffect(() => {
     if (!jobId) return;
@@ -414,3 +409,4 @@ export default function AIRanking() {
     </div>
   );
 }
+

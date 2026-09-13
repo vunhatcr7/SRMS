@@ -12,6 +12,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { formatDate, getErrorMessage, getInitials, getStageLabel } from '../../utils/formatters';
 import ScoreBadge from '../../components/ui/ScoreBadge';
@@ -88,7 +89,7 @@ export default function RecruiterPipeline() {
     jobTitle: string;
   } | null>(null);
 
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   useEffect(() => {
@@ -96,12 +97,6 @@ export default function RecruiterPipeline() {
     const timer = setTimeout(() => setToast(null), 3500);
     return () => clearTimeout(timer);
   }, [toast]);
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
 
   useEffect(() => {
     let active = true;

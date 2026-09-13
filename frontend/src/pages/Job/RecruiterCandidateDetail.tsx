@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, FileText, Mail, Phone, RefreshCw, User } from 'lucide-react';
 import api from '../../api/axios';
@@ -13,14 +14,7 @@ export default function RecruiterCandidateDetail() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
-
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   useEffect(() => { if (!candidateId) return; let active = true; api.get(`/application/recruiter/candidate/${candidateId}`).then((response) => { if (active) setApplications(Array.isArray(response.data) ? response.data : []); }).catch((requestError) => { if (active) setError(getErrorMessage(requestError)); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [candidateId]);
@@ -98,3 +92,5 @@ export default function RecruiterCandidateDetail() {
     </div>
   );
 }
+
+

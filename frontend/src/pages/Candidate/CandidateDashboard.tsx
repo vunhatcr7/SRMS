@@ -1,26 +1,29 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, BriefcaseBusiness, CheckCircle2, Clock3, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
-import { getScoreColor, getStageColor, getStageLabel } from '../../utils/formatters';
+import { getStageColor, getStageLabel } from '../../utils/formatters';
+import Card from '../../components/ui/Card';
+import EmptyState from '../../components/ui/EmptyState';
 
-interface RecentApplication { id: string; stage: string; matchingScore?: number; createdAt: string; job: { title: string; location: string } }
+interface RecentApplication { id: string; stage: string; matchingScore?: number; createdAt: string; job: { title: string; location: string; company?: { name: string } } }
 interface DashboardData { summary: { totalApplications: number; pendingApplications: number; hiredCount: number; applicationsByStage: Record<string, number> }; recentApplications: RecentApplication[] }
 
 export default function CandidateDashboard() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
 
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
-
-  const isDark = theme === 'dark';
+  const userName = typeof localStorage !== 'undefined' ? (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return user.fullName || user.email?.split('@')[0] || 'there';
+    } catch { return 'there'; }
+  })() : 'there';
 
   useEffect(() => {
     let active = true;
@@ -31,43 +34,53 @@ export default function CandidateDashboard() {
     return () => { active = false; };
   }, []);
 
-  if (loading) return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"><RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />Loading dashboard...</div>;
-  if (error || !data) return <div className={`rounded-lg border p-6 text-sm ${isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{error || 'No dashboard data.'}</div>;
+  if (loading) return (
+    <div className="flex min-h-[320px] items-center justify-center">
+      <RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />
+      <span className="text-sm text-slate-500">Loading dashboard...</span>
+    </div>
+  );
+  if (error || !data) return (
+    <Card className="text-sm text-rose-600 dark:text-rose-400">{error || 'No dashboard data.'}</Card>
+  );
 
   const { summary, recentApplications } = data;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">Candidate workspace</p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-100">Welcome back</h1>
-        <p className="mt-2 text-sm text-slate-400">Keep track of your applications and recruitment progress.</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Candidate workspace</p>
+        <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">Good morning, {userName}</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Keep your profile current and make your next move with clarity.</p>
+        <button type="button" onClick={() => navigate('/candidate/profile')} className="mt-4 text-sm font-semibold text-brand hover:text-brand-light">
+          Edit profile
+        </button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <p className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Applications</p>
-          <p className={`mt-2 text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{summary.totalApplications}</p>
-        </div>
-        <div className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <p className={`flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+        <Card>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Applications</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{summary.totalApplications}</p>
+        </Card>
+        <Card>
+          <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             <Clock3 className="h-4 w-4" /> In progress
           </p>
-          <p className={`mt-2 text-3xl font-bold text-amber-400`}>{summary.pendingApplications}</p>
-        </div>
-        <div className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-          <p className={`flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{summary.pendingApplications}</p>
+        </Card>
+        <Card>
+          <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             <CheckCircle2 className="h-4 w-4" /> Hired
           </p>
-          <p className={`mt-2 text-3xl font-bold text-emerald-400`}>{summary.hiredCount}</p>
-        </div>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{summary.hiredCount}</p>
+        </Card>
       </div>
 
-      <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+      <Card>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-bold text-slate-100">Recent applications</h2>
-            <p className="mt-1 text-xs text-slate-400">Your latest application activity.</p>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">Application activity</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{summary.totalApplications} active applications</p>
           </div>
           <button type="button" onClick={() => navigate('/candidate/applications')} className="inline-flex items-center gap-1 text-sm font-semibold text-brand hover:text-brand-light">
             View all <ArrowRight className="h-4 w-4" />
@@ -75,26 +88,26 @@ export default function CandidateDashboard() {
         </div>
 
         {recentApplications.length === 0 ? (
-          <div className="py-10 text-center">
-            <BriefcaseBusiness className="mx-auto h-8 w-8 text-slate-500" />
-            <p className="mt-2 text-sm text-slate-400">No applications yet.</p>
-            <button type="button" onClick={() => navigate('/candidate/jobs')} className="mt-4 rounded bg-brand px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-dark">
-              Browse jobs
-            </button>
-          </div>
+          <EmptyState
+            icon={<BriefcaseBusiness className="h-8 w-8" />}
+            title="No applications yet"
+            description="Browse jobs and start applying to track your progress."
+            action={
+              <button type="button" onClick={() => navigate('/candidate/jobs')} className="mt-4 rounded-md bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark">
+                Browse jobs
+              </button>
+            }
+          />
         ) : (
-          <div className="mt-4 space-y-2">
+          <div className="mt-5 space-y-2">
             {recentApplications.map((app) => (
-              <div key={app.id} className={`flex items-center justify-between rounded-lg border p-3 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+              <div key={app.id} onClick={() => navigate(`/candidate/applications/${app.id}`)} className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition hover:border-slate-300 dark:hover:border-navy-600 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-slate-200 truncate">{app.job.title}</div>
-                  <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{app.job.location}</div>
+                  <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{app.job.title}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{app.job.company?.name || app.job.location}</div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-xs font-semibold ${getScoreColor(app.matchingScore || 0)}`}>
-                    {Math.round(app.matchingScore || 0)}%
-                  </span>
-                  <span className={`rounded border px-2 py-0.5 text-[11px] font-semibold ${getStageColor(app.stage)}`}>
+                  <span className={`text-xs font-semibold ${getStageColor(app.stage)}`}>
                     {getStageLabel(app.stage)}
                   </span>
                 </div>
@@ -102,7 +115,7 @@ export default function CandidateDashboard() {
             ))}
           </div>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

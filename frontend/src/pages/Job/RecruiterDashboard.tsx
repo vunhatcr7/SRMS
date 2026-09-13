@@ -1,15 +1,54 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Briefcase, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Briefcase, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
+import api from '../../api/axios';
+import { formatDate, getStageLabel } from '../../utils/formatters';
 import CreateJobModal from '../../components/CreateJobModal';
+import Card from '../../components/ui/Card';
+import Badge from '../../components/ui/Badge';
+import Avatar from '../../components/ui/Avatar';
+
+interface DashboardData {
+  role: string;
+  summary: {
+    totalJobs: number;
+    activeJobs: number;
+    totalApplications: number;
+    pendingApplications: number;
+    scheduledInterviews: number;
+    hiredCount: number;
+    applicationsByStage: Record<string, number>;
+  };
+  recentApplications: Array<{
+    id: string;
+    stage: string;
+    matchingScore?: number;
+    createdAt: string;
+    job: { title: string; location: string };
+    candidateProfile?: { include: { user: { fullName: string; email: string } } };
+  }>;
+}
+
+interface InterviewItem {
+  id: string;
+  scheduledAt: string;
+  status: string;
+  application: {
+    job: { title: string };
+    candidateProfile?: { user: { fullName?: string; email: string } };
+  };
+}
 
 export default function RecruiterDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [toast, setToast] = useState<{ message: string; isSuccess: boolean } | null>(null);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const savedTheme = localStorage.getItem('srms-theme');
-    return savedTheme === 'light' ? 'light' : 'dark';
-  });
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [interviews, setInterviews] = useState<InterviewItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const showToast = (message: string, isSuccess: boolean) => {
     setToast({ message, isSuccess });
@@ -33,56 +72,60 @@ export default function RecruiterDashboard() {
   };
 
   useEffect(() => {
-    const syncTheme = () => {
-      const savedTheme = localStorage.getItem('srms-theme');
-      setTheme(savedTheme === 'light' ? 'light' : 'dark');
-    };
-
-    syncTheme();
-    window.addEventListener('srms-theme-change', syncTheme as EventListener);
-    return () => window.removeEventListener('srms-theme-change', syncTheme as EventListener);
+    let active = true;
+    Promise.all([
+      api.get('/dashboard'),
+      api.get('/interview/recruiter'),
+    ])
+      .then(([dashRes, intRes]) => {
+        if (active) {
+          setDashboard(dashRes.data as DashboardData);
+          setInterviews(Array.isArray(intRes.data) ? intRes.data : []);
+        }
+      })
+      .catch(() => { if (active) setError('Unable to load dashboard.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  const overviewCards = [
-    { label: 'Open roles', value: '24', change: '+12.5% this month', tone: 'text-brand-light' },
-    { label: 'Active candidates', value: '186', change: '+8.4% this month', tone: 'text-emerald-400' },
-    { label: 'Interviews this week', value: '32', change: '+6 scheduled', tone: 'text-sky-400' },
-    { label: 'Offers pending', value: '08', change: '+2 need review', tone: 'text-amber-400' },
-  ];
+  if (loading) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <RefreshCw className="mr-3 h-5 w-5 animate-spin text-brand" />
+        <span className="text-sm text-slate-500">Loading dashboard...</span>
+      </div>
+    );
+  }
+
+  if (error || !dashboard) {
+    return <Card className="text-sm text-rose-600 dark:text-rose-400">{error || 'No dashboard data.'}</Card>;
+  }
+
+  const { summary } = dashboard;
+  const upcomingInterviews = interviews
+    .filter((i) => i.status === 'SCHEDULED')
+    .slice(0, 5)
+    .map((i) => ({
+      name: i.application.candidateProfile?.user.fullName || 'Candidate',
+      role: i.application.job.title,
+      time: formatDate(i.scheduledAt),
+      mode: i.scheduledAt,
+    }));
 
   const pipelineStages = [
-    { name: 'Applied', count: 86 },
-    { name: 'Screening', count: 42 },
-    { name: 'Interview', count: 28 },
-    { name: 'Offer', count: 12 },
-    { name: 'Hired', count: 8 },
-    { name: 'Rejected', count: 5 },
+    { name: 'Applied', key: 'APPLIED' },
+    { name: 'Screening', key: 'SCREENING' },
+    { name: 'Interview', key: 'INTERVIEW' },
+    { name: 'Offer', key: 'OFFER' },
+    { name: 'Hired', key: 'HIRED' },
+    { name: 'Rejected', key: 'REJECTED' },
   ];
-
-  const upcomingInterviews = [
-    { name: 'Nguyễn Minh Anh', role: 'Senior Frontend Engineer', time: 'Today · 09:30', mode: 'Video call' },
-    { name: 'Lê Hoàng Nam', role: 'Backend Engineer', time: 'Today · 14:00', mode: 'On-site' },
-    { name: 'Phạm Khánh Linh', role: 'Product Designer', time: 'Wed · 10:15', mode: 'Video call' },
-  ];
-
-  const recentActivity = [
-    { name: 'Trần Gia Huy', role: 'Product Designer', stage: 'Screening', time: '12 min ago' },
-    { name: 'Đỗ Thùy Dương', role: 'Data Analyst', stage: 'Interview', time: '38 min ago' },
-    { name: 'Bùi Quang Minh', role: 'Product Manager', stage: 'Offer', time: '1 hr ago' },
-    { name: 'Nguyễn Hà My', role: 'Marketing Lead', stage: 'Applied', time: '2 hrs ago' },
-  ];
-
-  const isDarkTheme = theme === 'dark';
-
-  const activeUser = {
-    fullName: 'Minh',
-  };
 
   return (
     <div className="space-y-6 pb-8">
       {toast && (
         <div
-          className={`fixed right-5 top-5 z-50 flex items-center gap-2 rounded border px-4 py-3 text-xs font-semibold shadow-card ${
+          className={`fixed right-5 top-5 z-50 flex items-center gap-2 rounded-md border px-4 py-3 text-xs font-semibold shadow-card ${
             toast.isSuccess
               ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
               : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
@@ -93,16 +136,16 @@ export default function RecruiterDashboard() {
         </div>
       )}
 
-      <div className={`rounded-lg border p-6 ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+      <Card>
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
           <div className="space-y-2">
-            <p className={`text-[11px] font-semibold uppercase tracking-wider ${isDarkTheme ? 'text-slate-500' : 'text-slate-500'}`}>
+            <p className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
               Good morning
             </p>
-            <h2 className={`text-2xl font-bold tracking-tight ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>
-              {activeUser.fullName}
+            <h2 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Recruiter
             </h2>
-            <p className={`text-sm ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Here&apos;s what&apos;s happening across your hiring pipeline.
             </p>
           </div>
@@ -110,7 +153,7 @@ export default function RecruiterDashboard() {
           <button
             type="button"
             onClick={openCreateJob}
-            className="inline-flex items-center justify-center gap-2 rounded bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
           >
             <Briefcase className="h-4 w-4" />
             Create job
@@ -118,107 +161,108 @@ export default function RecruiterDashboard() {
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {overviewCards.map((card) => (
-            <div key={card.label} className={`rounded-lg border p-4 ${isDarkTheme ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
-              <div className={`text-[11px] font-semibold uppercase tracking-wider ${isDarkTheme ? 'text-slate-500' : 'text-slate-500'}`}>
-                {card.label}
-              </div>
-              <div className={`mt-2 text-3xl font-bold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{card.value}</div>
-              <div className={`mt-2 flex items-center gap-1.5 text-[11px] font-medium ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-current" />
-                {card.change}
-              </div>
-            </div>
-          ))}
+          <Card padding="sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Open roles</p>
+            <p className={`mt-2 text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{summary.activeJobs}</p>
+          </Card>
+          <Card padding="sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active applications</p>
+            <p className={`mt-2 text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{summary.totalApplications}</p>
+          </Card>
+          <Card padding="sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Scheduled interviews</p>
+            <p className={`mt-2 text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{summary.scheduledInterviews}</p>
+          </Card>
+          <Card padding="sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Offers pending</p>
+            <p className={`mt-2 text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{summary.applicationsByStage.OFFER || 0}</p>
+          </Card>
         </div>
-      </div>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className={`rounded-lg border p-5 ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+        <Card>
           <div className="flex items-center justify-between">
-            <h3 className={`text-sm font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Hiring pipeline</h3>
-            <button className="text-xs font-semibold text-brand hover:text-brand-light">View details</button>
+            <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Hiring pipeline</h3>
           </div>
 
           <div className="mt-5 space-y-3">
-            {pipelineStages.map((stage) => (
-              <div key={stage.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className={`h-2 w-2 rounded-full ${
-                    stage.name === 'Applied' ? 'bg-sky-500' :
-                    stage.name === 'Screening' ? 'bg-indigo-500' :
-                    stage.name === 'Interview' ? 'bg-amber-500' :
-                    stage.name === 'Offer' ? 'bg-pink-500' :
-                    stage.name === 'Hired' ? 'bg-emerald-500' : 'bg-rose-500'
-                  }`} />
-                  <span className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-slate-700'}`}>{stage.name}</span>
+            {pipelineStages.map((stage) => {
+              const count = summary.applicationsByStage[stage.key] || 0;
+              const colors: Record<string, string> = {
+                APPLIED: 'bg-sky-500',
+                SCREENING: 'bg-indigo-500',
+                INTERVIEW: 'bg-amber-500',
+                OFFER: 'bg-pink-500',
+                HIRED: 'bg-emerald-500',
+                REJECTED: 'bg-rose-500',
+              };
+              return (
+                <div key={stage.key} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className={`h-2 w-2 rounded-full ${colors[stage.key] || 'bg-slate-500'}`} />
+                    <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{stage.name}</span>
+                  </div>
+                  <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{count}</span>
                 </div>
-                <span className={`text-sm font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{stage.count}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
+        </Card>
 
-        <div className={`rounded-lg border p-5 ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+        <Card>
           <div className="flex items-center justify-between">
-            <h3 className={`text-sm font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Upcoming interviews</h3>
-            <button className="text-xs font-semibold text-brand hover:text-brand-light">View calendar</button>
+            <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Upcoming interviews</h3>
           </div>
 
           <div className="mt-5 space-y-2">
-            {upcomingInterviews.map((person) => (
-              <div key={person.name} className={`flex items-center gap-3 rounded-lg border p-3 ${isDarkTheme ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded text-xs font-bold ${isDarkTheme ? 'bg-navy-700 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>
-                  {person.name.slice(0, 2).toUpperCase()}
+            {upcomingInterviews.length === 0 ? (
+              <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">No upcoming interviews.</p>
+            ) : (
+              upcomingInterviews.map((person, idx) => (
+                <div key={idx} className={`flex items-center gap-3 rounded-lg border p-3 ${isDark ? 'border-navy-700 bg-navy-850' : 'border-slate-200 bg-slate-50'}`}>
+                  <Avatar name={person.name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <div className={`truncate text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{person.name}</div>
+                    <div className={`truncate text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{person.role}</div>
+                  </div>
+                  <div className={`text-right text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                    <div className="font-medium">{person.time}</div>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className={`truncate text-sm font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{person.name}</div>
-                  <div className={`truncate text-xs ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>{person.role}</div>
-                </div>
-                <div className={`text-right text-[11px] ${isDarkTheme ? 'text-slate-300' : 'text-slate-600'}`}>
-                  <div className="font-medium">{person.time}</div>
-                  <div className={isDarkTheme ? 'text-slate-500' : 'text-slate-400'}>{person.mode}</div>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-        </div>
+        </Card>
       </div>
 
-      <div className={`rounded-lg border p-5 ${isDarkTheme ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+      <Card>
         <div className="flex items-center justify-between">
-          <h3 className={`text-sm font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Recent activity</h3>
-          <button className="text-xs font-semibold text-brand hover:text-brand-light">View all candidates</button>
+          <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Recent activity</h3>
         </div>
 
-        <div className={`mt-5 overflow-hidden rounded-lg border ${isDarkTheme ? 'border-navy-700' : 'border-slate-200'}`}>
+        <div className={`mt-5 overflow-hidden rounded-lg border ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
           <table className="min-w-full border-collapse text-left text-sm">
-            <thead className={isDarkTheme ? 'bg-navy-900 text-[11px] uppercase tracking-wider text-slate-500' : 'bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500'}>
+            <thead className={isDark ? 'bg-navy-900 text-[11px] uppercase tracking-wider text-slate-500' : 'bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500'}>
               <tr>
                 <th className="px-4 py-3 font-medium">Candidate</th>
                 <th className="px-4 py-3 font-medium">Role</th>
                 <th className="px-4 py-3 font-medium">Stage</th>
-                <th className="px-4 py-3 font-medium">Updated</th>
+                <th className="px-4 py-3 font-medium">Applied</th>
               </tr>
             </thead>
             <tbody>
-              {recentActivity.length > 0 ? (
-                recentActivity.map((item, index) => (
-                  <tr key={`${item.name}-${index}`} className={`border-t ${isDarkTheme ? 'border-navy-700 text-slate-300' : 'border-slate-200 text-slate-700'}`}>
-                    <td className={`px-4 py-3 font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>{item.name}</td>
-                    <td className={`px-4 py-3 ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`}>{item.role}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${
-                        item.stage === 'Applied' ? 'border-sky-500/30 bg-sky-500/10 text-sky-400' :
-                        item.stage === 'Screening' ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400' :
-                        item.stage === 'Interview' ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' :
-                        item.stage === 'Offer' ? 'border-pink-500/30 bg-pink-500/10 text-pink-400' :
-                        'border-slate-500/30 bg-slate-500/10 text-slate-400'
-                      }`}>
-                        {item.stage}
-                      </span>
+              {dashboard.recentApplications.length > 0 ? (
+                dashboard.recentApplications.map((item) => (
+                  <tr key={item.id} className={`border-t ${isDark ? 'border-navy-700 text-slate-300' : 'border-slate-200 text-slate-700'}`}>
+                    <td className={`px-4 py-3 font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {item.candidateProfile?.include?.user?.fullName || 'Candidate'}
                     </td>
-                    <td className={`px-4 py-3 ${isDarkTheme ? 'text-slate-500' : 'text-slate-500'}`}>{item.time}</td>
+                    <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{item.job.title}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="slate">{getStageLabel(item.stage)}</Badge>
+                    </td>
+                    <td className={`px-4 py-3 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{formatDate(item.createdAt)}</td>
                   </tr>
                 ))
               ) : (
@@ -231,7 +275,7 @@ export default function RecruiterDashboard() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {searchParams.get('createJob') === '1' && (
         <CreateJobModal

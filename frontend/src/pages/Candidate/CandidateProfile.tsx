@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { getErrorMessage, getInitials } from '../../utils/formatters';
 
@@ -77,16 +78,10 @@ export default function CandidateProfile() {
   const [uploadMessage, setUploadMessage] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   const isDark = theme === 'dark';
-
-  useEffect(() => {
-    const syncTheme = () => setTheme(localStorage.getItem('srms-theme') === 'light' ? 'light' : 'dark');
-    window.addEventListener('srms-theme-change', syncTheme);
-    return () => window.removeEventListener('srms-theme-change', syncTheme);
-  }, []);
 
   const applyProfile = (data: CandidateProfileResponse) => {
     setProfile(data);
