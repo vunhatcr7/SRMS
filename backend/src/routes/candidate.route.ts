@@ -1,24 +1,26 @@
 import { RequestHandler, Router } from 'express';
-import { getCandidateProfileByUserId, getMyCandidateProfile, parseResume, upsertMyCandidateProfile, uploadResume } from '../controllers/candidate.controller';
+import path from 'path';
+import { getCandidateProfileByUserId, getCandidateResume, getMyCandidateProfile, getMyResume, parseResume, upsertMyCandidateProfile, uploadResume } from '../controllers/candidate.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 import multer from 'multer';
+import { MAX_RESUME_FILE_SIZE } from '../services/resume-storage.service';
 
 const router = Router();
 const upload = multer({
 	storage: multer.memoryStorage(),
-	limits: { fileSize: 5 * 1024 * 1024 },
+	limits: { fileSize: MAX_RESUME_FILE_SIZE },
 	fileFilter: (_req, file, callback) => {
-		const acceptedTypes = [
-			'application/pdf',
-			'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-		];
+		const extension = path.extname(file.originalname).toLowerCase();
+		const isPdf = file.mimetype === 'application/pdf' && extension === '.pdf';
+		const isDocx = file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+			&& extension === '.docx';
 
-		if (acceptedTypes.includes(file.mimetype)) {
+		if (isPdf || isDocx) {
 			callback(null, true);
 			return;
 		}
 
-		callback(new Error('Chi chap nhan file PDF hoac DOCX.'));
+		callback(new Error('Chỉ chấp nhận file PDF hoặc DOCX.'));
 	},
 });
 
@@ -114,8 +116,8 @@ router.put('/profile', requireAuth, rolesAllowed('CANDIDATE'), upsertMyCandidate
  *   post:
  *     tags:
  *       - Candidate
- *     summary: Upload and extract a CV
- *     description: Candidate-only endpoint. Accepts PDF or DOCX files up to 5 MB and stores extracted text.
+ *     summary: Upload and store the original CV
+ *     description: Candidate-only endpoint. Accepts validated PDF or DOCX files up to 5 MB. The original file is stored privately and can be retrieved through the protected resume endpoints. This operation does not call an AI provider.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -132,15 +134,83 @@ router.put('/profile', requireAuth, rolesAllowed('CANDIDATE'), upsertMyCandidate
  *                 format: binary
  *     responses:
  *       200:
- *         description: CV uploaded and parsed
+ *         description: Original CV stored and linked to the candidate profile
  *       400:
- *         description: Missing, oversized, unsupported, or unreadable file
+ *         description: Missing, oversized, unsupported, or invalid file
+ *       422:
+ *         description: PDF/DOCX content could not be read
  *       401:
  *         description: Missing or invalid token
  *       403:
  *         description: User is not CANDIDATE
+ *       500:
+ *         description: File storage or database error
  */
 router.post('/resume', requireAuth, rolesAllowed('CANDIDATE'), uploadResumeFile, uploadResume);
+
+/**
+ * @swagger
+ * /api/v1/candidate/resume/file:
+ *   get:
+ *     tags:
+ *       - Candidate
+ *     summary: View or download my stored CV
+ *     description: Candidate-only endpoint. Returns the original file associated with the authenticated candidate's own profile.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: download
+ *         schema:
+ *           type: boolean
+ *         description: Set true to force a download instead of inline viewing.
+ *     responses:
+ *       200:
+ *         description: Original CV file
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User is not a candidate
+ *       404:
+ *         description: Candidate profile or stored CV not found
+ *       500:
+ *         description: Storage read error
+ */
+router.get('/resume/file', requireAuth, rolesAllowed('CANDIDATE'), getMyResume);
+
+/**
+ * @swagger
+ * /api/v1/candidate/resume/{userId}/file:
+ *   get:
+ *     tags:
+ *       - Candidate
+ *     summary: View or download a candidate CV
+ *     description: Recruiters can access CVs only for candidates who applied to jobs they own. ADMIN and MANAGER can access all candidate CVs.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: download
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: Original CV file
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: User does not have access to this candidate
+ *       404:
+ *         description: Candidate profile or stored CV not found
+ *       500:
+ *         description: Storage read error
+ */
+router.get('/resume/:userId/file', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getCandidateResume);
 
 /**
  * @swagger

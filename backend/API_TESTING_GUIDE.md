@@ -493,3 +493,38 @@ Health
 -> Xem dashboard
 ```
 
+## Upload va xem/tai CV goc
+
+CV goc duoc luu trong thu muc rieng, khong public nhu static file. Mac dinh backend dung `backend/storage/cv`; dat `CV_STORAGE_DIR` de tro den thu muc tren persistent volume.
+
+```env
+CV_STORAGE_DIR=C:\srms-data\cv
+```
+
+Upload bang token Candidate, dung `multipart/form-data` voi field `resume`. Chi nhan PDF/DOCX, toi da 5 MB:
+
+```http
+POST /api/v1/candidate/resume
+Authorization: Bearer CANDIDATE_TOKEN
+Content-Type: multipart/form-data
+```
+
+Candidate xem CV cua chinh minh:
+
+```http
+GET /api/v1/candidate/resume/file
+Authorization: Bearer CANDIDATE_TOKEN
+```
+
+Them `?download=true` de buoc tai file. Recruiter chi xem/tai CV neu candidate da nop don vao job recruiter do so huu:
+
+```http
+GET /api/v1/candidate/resume/CANDIDATE_USER_ID/file
+Authorization: Bearer RECRUITER_TOKEN
+```
+
+Luot upload moi thay CV hien hanh va cap nhat metadata. Du lieu CV legacy chi co ten file/URL va van ban trich xuat khong the khoi phuc thanh file goc. Endpoint `POST /api/v1/candidate/resume/parse` van la API rieng; upload va tai file khong goi API nay.
+
+Luu y production: filesystem local chi ben vung khi deployment gan persistent volume va cac instance dung chung volume. He thong nhieu instance nen chuyen sang object storage private (vi du Supabase Storage/S3), dung signed URL hoac API phan quyen va co chinh sach backup/xoa CV. Khong dat thu muc CV trong web root hoac commit file CV vao Git.
+
+Migration them metadata CV chi them cac cot nullable va unique index, khong xoa cot hay du lieu hien co. Migration chua duoc ap dung vao database. Repository chua co migration baseline; can doi chieu schema database va baseline/prisma migrate plan truoc khi ap dung tren database da ton tai.

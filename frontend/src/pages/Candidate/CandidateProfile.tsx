@@ -3,6 +3,8 @@ import {
   AlertCircle,
   Briefcase,
   CheckCircle2,
+  Download,
+  ExternalLink,
   FileCheck,
   FileText,
   GraduationCap,
@@ -18,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { getErrorMessage, getInitials } from '../../utils/formatters';
+import { openResumeFile } from '../../utils/resumeFiles';
 import Skeleton from '../../components/ui/Skeleton';
 import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
@@ -32,6 +35,9 @@ interface CandidateProfileResponse {
   education: EducationData | null;
   resumeUrl?: string | null;
   resumeText?: string | null;
+  resumeFileName?: string | null;
+  resumeMimeType?: string | null;
+  resumeFileSize?: number | null;
   user: ProfileUser;
 }
 interface ParsedResume {
@@ -62,6 +68,7 @@ export default function CandidateProfile() {
   const [profileError, setProfileError] = useState('');
   const [saving, setSaving] = useState(false);
   const [parsing, setParsing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -78,6 +85,8 @@ export default function CandidateProfile() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadMessage, setUploadMessage] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [parseMessage, setParseMessage] = useState('');
+  const [resumeActionMessage, setResumeActionMessage] = useState('');
   const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -97,7 +106,17 @@ export default function CandidateProfile() {
     setEducationSummary(data.education?.summary || `${data.education?.school || ''} ${data.education?.major || ''}`.trim());
     const storedResume = data.resumeUrl || '';
     setResumeUrl(storedResume.startsWith('http') ? storedResume : '');
-    if (storedResume && !storedResume.startsWith('http')) setResumeFile({ fileName: storedResume });
+    if (data.resumeFileName) {
+      setResumeFile({
+        fileName: data.resumeFileName,
+        mimeType: data.resumeMimeType || undefined,
+        size: data.resumeFileSize || undefined,
+      });
+    } else if (storedResume && !storedResume.startsWith('http')) {
+      setResumeFile({ fileName: storedResume });
+    } else {
+      setResumeFile(null);
+    }
   };
 
   useEffect(() => {
@@ -167,7 +186,7 @@ export default function CandidateProfile() {
     }
   };
 
-  const handleUploadAndParse = async () => {
+  const handleUpload = async () => {
     if (!selectedFile) {
       setUploadMessage('Please select a PDF or DOCX file.');
       setUploadSuccess(false);
@@ -178,25 +197,64 @@ export default function CandidateProfile() {
       setUploadSuccess(false);
       return;
     }
-    setParsing(true);
+    setUploading(true);
     setUploadMessage('');
     setUploadSuccess(false);
     try {
       const formData = new FormData();
       formData.append('resume', selectedFile);
-      await api.post('/candidate/resume', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setResumeFile({ fileName: selectedFile.name, mimeType: selectedFile.type, size: selectedFile.size });
+      const response = await api.post('/candidate/resume', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const uploadedResume = response.data?.resume;
+      setResumeFile({
+        fileName: uploadedResume?.fileName || selectedFile.name,
+        mimeType: uploadedResume?.mimeType || selectedFile.type,
+        size: uploadedResume?.size || selectedFile.size,
+      });
       setResumeUrl('');
-      const parseResponse = await api.post('/candidate/resume/parse');
-      setParsedResume(parseResponse.data?.parsedResume || emptyParsedResume);
       setUploadSuccess(true);
-      setUploadMessage('Resume uploaded. Review the extracted information below before saving.');
+      setUploadMessage(response.data?.warning || 'Original CV uploaded and saved successfully.');
+      setProfile((current) => response.data?.profile
+        ? {
+          ...current,
+          ...response.data.profile,
+          user: response.data.profile.user || current?.user || getStoredUser(),
+        }
+        : current);
+      setParseMessage('');
+      setParsedResume(null);
       setSelectedFile(null);
     } catch (error) {
       setUploadSuccess(false);
       setUploadMessage(getErrorMessage(error));
     } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleParseResume = async () => {
+    setParsing(true);
+    setParseMessage('');
+    try {
+      const response = await api.post('/candidate/resume/parse');
+      setParsedResume(response.data?.parsedResume || emptyParsedResume);
+      setParseMessage('AI parsing completed. Review the extracted information below.');
+    } catch (error: unknown) {
+      setParseMessage(`Could not parse CV with AI: ${getErrorMessage(error)}`);
+    } finally {
       setParsing(false);
+    }
+  };
+
+  const handleResumeAction = async (download: boolean) => {
+    setResumeActionMessage('');
+    try {
+      await openResumeFile(
+        `/candidate/resume/file${download ? '?download=true' : ''}`,
+        resumeFile?.fileName || 'resume',
+        download,
+      );
+    } catch (error: unknown) {
+      setResumeActionMessage(getErrorMessage(error));
     }
   };
 
@@ -310,12 +368,29 @@ export default function CandidateProfile() {
             <span className="ml-2 shrink-0 text-xs font-bold text-brand">Browse</span>
             <input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={(event) => setSelectedFile(event.target.files?.[0] || null)} />
           </label>
-          <button type="button" disabled={!selectedFile || parsing} onClick={() => void handleUploadAndParse()} className="inline-flex items-center justify-center gap-2 rounded bg-brand px-5 py-3 text-xs font-bold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60">
-            <Upload className="h-4 w-4" />{parsing ? 'Reading...' : 'Upload & parse'}
+          <button type="button" disabled={!selectedFile || uploading} onClick={() => void handleUpload()} className="inline-flex items-center justify-center gap-2 rounded bg-brand px-5 py-3 text-xs font-bold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60">
+            <Upload className="h-4 w-4" />{uploading ? 'Uploading...' : 'Upload CV'}
           </button>
         </div>
         {resumeFile && <div className={`mt-3 flex items-center gap-2 rounded-lg border p-3 text-xs ${isDark ? 'border-navy-700 bg-navy-850 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-700'}`}><FileCheck className="h-4 w-4 text-emerald-400" /><span className="font-semibold">{resumeFile.fileName}</span>{resumeFile.size && <span>({formatFileSize(resumeFile.size)})</span>}</div>}
+        {profile?.resumeFileName && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => void handleResumeAction(false)} className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-xs font-semibold ${isDark ? 'border-navy-700 text-slate-200 hover:bg-navy-750' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}>
+              <ExternalLink className="h-4 w-4" />View CV
+            </button>
+            <button type="button" onClick={() => void handleResumeAction(true)} className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-xs font-semibold ${isDark ? 'border-navy-700 text-slate-200 hover:bg-navy-750' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}>
+              <Download className="h-4 w-4" />Download CV
+            </button>
+          </div>
+        )}
+        {resumeActionMessage && <p role="alert" className="mt-2 text-xs text-rose-500">{resumeActionMessage}</p>}
         {uploadMessage && <div className={`mt-3 flex items-center gap-2 rounded-lg border p-3 text-xs font-medium ${uploadSuccess ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-rose-500/30 bg-rose-500/10 text-rose-400'}`}>{uploadSuccess ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}{uploadMessage}</div>}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button type="button" disabled={parsing || !resumeFile} onClick={() => void handleParseResume()} className={`rounded border px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${isDark ? 'border-indigo-400/40 text-indigo-300' : 'border-indigo-200 text-indigo-700'}`}>
+            {parsing ? 'Parsing with AI...' : 'Parse CV with AI'}
+          </button>
+          {parseMessage && <p role="status" className="text-xs text-slate-500">{parseMessage}</p>}
+        </div>
       </section>
 
       {parsedResume && (

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/axios';
 import { getErrorMessage, getInitials, getStageColor } from '../../utils/formatters';
+import { openResumeFile } from '../../utils/resumeFiles';
 import ScoreBadge from '../../components/ui/ScoreBadge';
 import SkillTag from '../../components/ui/SkillTag';
 
@@ -39,6 +40,7 @@ interface RankedCandidate {
     userId: string;
     resumeUrl?: string;
     resumeText?: string;
+    resumeFileName?: string | null;
     skills: string[];
     experience?: {
       years?: number;
@@ -104,6 +106,18 @@ export default function AIRanking() {
   const showToast = (text: string, isSuccess: boolean) => {
     setToastMessage({ text, isSuccess });
     setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleResumeAction = async (candidate: RankedCandidate, download = false) => {
+    try {
+      await openResumeFile(
+        `/candidate/resume/${encodeURIComponent(candidate.candidateProfile.userId)}/file${download ? '?download=true' : ''}`,
+        candidate.candidateProfile.resumeFileName || 'resume',
+        download,
+      );
+    } catch (requestError: unknown) {
+      showToast(getErrorMessage(requestError), false);
+    }
   };
 
   const handleAnalyzeWithAI = async (applicationId: string) => {
@@ -361,7 +375,17 @@ export default function AIRanking() {
 
                 <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-navy-700 text-xs">
                   <div className="flex items-center gap-3">
-                    {candidate.candidateProfile?.resumeUrl && (
+                    {candidate.candidateProfile?.resumeFileName ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleResumeAction(candidate)}
+                        className="inline-flex items-center gap-1 text-slate-400 hover:text-brand transition"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Resume
+                        <ExternalLink className="h-3 w-3 opacity-60" />
+                      </button>
+                    ) : candidate.candidateProfile?.resumeUrl && (
                       <a
                         href={candidate.candidateProfile.resumeUrl}
                         target="_blank"
@@ -409,4 +433,3 @@ export default function AIRanking() {
     </div>
   );
 }
-
