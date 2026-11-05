@@ -34,17 +34,7 @@ interface CandidateProfileResponse {
   resumeText?: string | null;
   user: ProfileUser;
 }
-interface ParsedResume {
-  fullName?: string;
-  email?: string;
-  skills: string[];
-  experienceYears: number;
-  position?: string;
-  education?: string;
-  summary?: string;
-}
 interface ResumeFileInfo { fileName: string; mimeType?: string; size?: number; }
-const emptyParsedResume: ParsedResume = { skills: [], experienceYears: 0 };
 const getStoredUser = (): ProfileUser => {
   try {
     const value = localStorage.getItem('user');
@@ -61,7 +51,7 @@ export default function CandidateProfile() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [parsing, setParsing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -78,7 +68,6 @@ export default function CandidateProfile() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadMessage, setUploadMessage] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
   const navigate = useNavigate();
   const { theme } = useTheme();
 
@@ -157,7 +146,6 @@ export default function CandidateProfile() {
       setIsSuccess(true);
       setMessage(response.data?.message || 'Profile saved.');
       if (response.data?.profile) applyProfile(response.data.profile as CandidateProfileResponse);
-      setParsedResume(null);
       setProfileError('');
     } catch (error) {
       setIsSuccess(false);
@@ -167,7 +155,7 @@ export default function CandidateProfile() {
     }
   };
 
-  const handleUploadAndParse = async () => {
+  const handleUpload = async () => {
     if (!selectedFile) {
       setUploadMessage('Please select a PDF or DOCX file.');
       setUploadSuccess(false);
@@ -178,7 +166,7 @@ export default function CandidateProfile() {
       setUploadSuccess(false);
       return;
     }
-    setParsing(true);
+    setUploading(true);
     setUploadMessage('');
     setUploadSuccess(false);
     try {
@@ -187,33 +175,15 @@ export default function CandidateProfile() {
       await api.post('/candidate/resume', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setResumeFile({ fileName: selectedFile.name, mimeType: selectedFile.type, size: selectedFile.size });
       setResumeUrl('');
-      const parseResponse = await api.post('/candidate/resume/parse');
-      setParsedResume(parseResponse.data?.parsedResume || emptyParsedResume);
       setUploadSuccess(true);
-      setUploadMessage('Resume uploaded. Review the extracted information below before saving.');
+      setUploadMessage('Resume uploaded successfully.');
       setSelectedFile(null);
     } catch (error) {
       setUploadSuccess(false);
       setUploadMessage(getErrorMessage(error));
     } finally {
-      setParsing(false);
+      setUploading(false);
     }
-  };
-
-  const applyParsedResume = () => {
-    if (!parsedResume) return;
-    if (parsedResume.fullName) setFullName(parsedResume.fullName);
-    if (parsedResume.skills.length > 0) setSkills(parsedResume.skills);
-    setExperienceYears(parsedResume.experienceYears);
-    setPosition(parsedResume.position || '');
-    setExperienceSummary(parsedResume.summary || '');
-    setEducationSummary(parsedResume.education || '');
-    setMessage('Extracted information applied to the form. You can edit before saving.');
-    setIsSuccess(true);
-  };
-
-  const updateParsedResume = (field: keyof ParsedResume, value: string | number | string[]) => {
-    setParsedResume((current) => current ? { ...current, [field]: value } : current);
   };
 
   const currentUser = profile?.user || getStoredUser();
@@ -310,49 +280,13 @@ export default function CandidateProfile() {
             <span className="ml-2 shrink-0 text-xs font-bold text-brand">Browse</span>
             <input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={(event) => setSelectedFile(event.target.files?.[0] || null)} />
           </label>
-          <button type="button" disabled={!selectedFile || parsing} onClick={() => void handleUploadAndParse()} className="inline-flex items-center justify-center gap-2 rounded bg-brand px-5 py-3 text-xs font-bold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60">
-            <Upload className="h-4 w-4" />{parsing ? 'Reading...' : 'Upload & parse'}
+          <button type="button" disabled={!selectedFile || uploading} onClick={() => void handleUpload()} className="inline-flex items-center justify-center gap-2 rounded bg-brand px-5 py-3 text-xs font-bold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60">
+            <Upload className="h-4 w-4" />{uploading ? 'Uploading...' : 'Upload CV'}
           </button>
         </div>
         {resumeFile && <div className={`mt-3 flex items-center gap-2 rounded-lg border p-3 text-xs ${isDark ? 'border-navy-700 bg-navy-850 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-700'}`}><FileCheck className="h-4 w-4 text-emerald-400" /><span className="font-semibold">{resumeFile.fileName}</span>{resumeFile.size && <span>({formatFileSize(resumeFile.size)})</span>}</div>}
         {uploadMessage && <div className={`mt-3 flex items-center gap-2 rounded-lg border p-3 text-xs font-medium ${uploadSuccess ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-rose-500/30 bg-rose-500/10 text-rose-400'}`}>{uploadSuccess ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}{uploadMessage}</div>}
       </section>
-
-      {parsedResume && (
-        <section className={`rounded-lg border p-5 ${isDark ? 'border-amber-500/30 bg-amber-500/5' : 'border-amber-200 bg-amber-50/50'}`}>
-          <div className="flex flex-col justify-between gap-3 border-b border-amber-500/30 pb-4 sm:flex-row sm:items-center">
-            <div>
-              <h2 className={`font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Review extracted information</h2>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>AI output is a draft. Edit it here, then save to your profile.</p>
-            </div>
-            <button type="button" onClick={applyParsedResume} className="inline-flex items-center justify-center gap-2 rounded bg-brand px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-dark">
-              Use extracted information
-            </button>
-          </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Name</label>
-              <input value={parsedResume.fullName || ''} onChange={(event) => updateParsedResume('fullName', event.target.value)} className={`mt-1 w-full rounded border bg-transparent px-3 py-2 text-xs outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-amber-200 bg-white text-slate-900 focus:border-brand'}`} />
-            </div>
-            <div>
-              <label className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Position</label>
-              <input value={parsedResume.position || ''} onChange={(event) => updateParsedResume('position', event.target.value)} className={`mt-1 w-full rounded border bg-transparent px-3 py-2 text-xs outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-amber-200 bg-white text-slate-900 focus:border-brand'}`} />
-            </div>
-            <div>
-              <label className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Experience years</label>
-              <input type="number" min="0" value={parsedResume.experienceYears} onChange={(event) => updateParsedResume('experienceYears', Number(event.target.value))} className={`mt-1 w-full rounded border bg-transparent px-3 py-2 text-xs outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-amber-200 bg-white text-slate-900 focus:border-brand'}`} />
-            </div>
-            <div>
-              <label className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Education</label>
-              <input value={parsedResume.education || ''} onChange={(event) => updateParsedResume('education', event.target.value)} className={`mt-1 w-full rounded border bg-transparent px-3 py-2 text-xs outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-amber-200 bg-white text-slate-900 focus:border-brand'}`} />
-            </div>
-            <div className="sm:col-span-2">
-              <label className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Skills (comma separated)</label>
-              <input value={parsedResume.skills.join(', ')} onChange={(event) => updateParsedResume('skills', event.target.value.split(',').map((s) => s.trim()).filter(Boolean))} className={`mt-1 w-full rounded border bg-transparent px-3 py-2 text-xs outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-amber-200 bg-white text-slate-900 focus:border-brand'}`} />
-            </div>
-          </div>
-        </section>
-      )}
 
       <form onSubmit={(event) => void handleSaveProfile(event)} className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
         <div className={`border-b pb-4 mb-4 ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
