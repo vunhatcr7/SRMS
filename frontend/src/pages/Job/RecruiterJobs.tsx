@@ -10,7 +10,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import Skeleton from '../../components/ui/Skeleton';
 import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
-interface Job { id: string; title: string; location: string; salaryRange?: string | null; isActive: boolean; createdAt: string; company?: { name: string }; _count?: { applications: number } }
+interface Job { id: string; title: string; location: string; salaryRange?: string | null; benefits?: string | null; isActive: boolean; createdAt: string; company?: { name: string }; _count?: { applications: number } }
 
 export default function RecruiterJobs() {
   const navigate = useNavigate();
@@ -123,6 +123,7 @@ export default function RecruiterJobs() {
               </span>
               <span>Created {formatDate(job.createdAt)}</span>
             </div>
+            {job.benefits && <p className={`mt-3 line-clamp-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}><span className="font-semibold">Benefits:</span> {job.benefits}</p>}
 
             <div className={`mt-4 flex items-center justify-between border-t pt-3 ${isDark ? 'border-navy-700' : 'border-slate-200'}`}>
               <span className="text-xs text-slate-500 dark:text-slate-400">{job._count?.applications ?? 0} applications</span>

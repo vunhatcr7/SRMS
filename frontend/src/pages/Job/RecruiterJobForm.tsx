@@ -6,8 +6,8 @@ import api from '../../api/axios';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { getErrorMessage } from '../../utils/formatters';
 
-interface FormState { title: string; companyName: string; description: string; requirements: string; salaryRange: string; location: string; isActive: boolean }
-const initialForm: FormState = { title: '', companyName: '', description: '', requirements: '', salaryRange: '', location: '', isActive: true };
+interface FormState { title: string; companyName: string; description: string; requirements: string; benefits: string; salaryRange: string; location: string; isActive: boolean }
+const initialForm: FormState = { title: '', companyName: '', description: '', requirements: '', benefits: '', salaryRange: '', location: '', isActive: true };
 
 export default function RecruiterJobForm() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -23,7 +23,7 @@ export default function RecruiterJobForm() {
 
   useEffect(() => {
     if (!jobId) return;
-    api.get(`/job/manage/${jobId}`).then((response) => { const job = response.data; setForm({ title: job.title || '', companyName: job.company?.name || '', description: job.description || '', requirements: job.requirements || '', salaryRange: job.salaryRange || '', location: job.location || '', isActive: job.isActive }); }).catch((error) => setMessage(getErrorMessage(error))).finally(() => setLoading(false));
+    api.get(`/job/manage/${jobId}`).then((response) => { const job = response.data; setForm({ title: job.title || '', companyName: job.company?.name || '', description: job.description || '', requirements: job.requirements || '', benefits: job.benefits || '', salaryRange: job.salaryRange || '', location: job.location || '', isActive: job.isActive }); }).catch((error) => setMessage(getErrorMessage(error))).finally(() => setLoading(false));
   }, [jobId]);
 
   const update = (field: keyof FormState, value: string | boolean) => setForm((current) => ({ ...current, [field]: value }));
@@ -33,7 +33,7 @@ export default function RecruiterJobForm() {
     setMessage('');
     try {
       if (editing) {
-        await api.put(`/job/manage/${jobId}`, { title: form.title, description: form.description, requirements: form.requirements, salaryRange: form.salaryRange, location: form.location, isActive: form.isActive });
+        await api.put(`/job/manage/${jobId}`, { title: form.title, description: form.description, requirements: form.requirements, benefits: form.benefits, salaryRange: form.salaryRange, location: form.location, isActive: form.isActive });
         navigate(`/recruiter/jobs/${jobId}`);
       } else {
         const response = await api.post('/job/create', form);
@@ -93,6 +93,10 @@ export default function RecruiterJobForm() {
               Requirements
               <textarea required value={form.requirements} onChange={(event) => update('requirements', event.target.value)} rows={4} className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition resize-none ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
             </label>
+            <label className={`text-sm font-semibold sm:col-span-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+              Benefits
+              <textarea value={form.benefits} onChange={(event) => update('benefits', event.target.value)} rows={3} placeholder="Health insurance, annual leave, flexible hours..." className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition resize-none ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
+            </label>
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -108,6 +112,5 @@ export default function RecruiterJobForm() {
     </div>
   );
 }
-
 
 
