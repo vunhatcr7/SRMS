@@ -9,7 +9,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import Skeleton from '../../components/ui/Skeleton';
 import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
-interface RecentApplication { id: string; stage: string; matchingScore?: number; createdAt: string; job: { title: string; location: string; company?: { name: string } } }
+interface RecentApplication { id: string; stage: string; createdAt: string; job: { title: string; location: string; company?: { name: string } } }
 interface DashboardData { summary: { totalApplications: number; pendingApplications: number; hiredCount: number; applicationsByStage: Record<string, number> }; recentApplications: RecentApplication[] }
 
 export default function CandidateDashboard() {

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownUp, BriefcaseBusiness, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { BriefcaseBusiness, Search } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
-import { formatDate, getScoreColor, getStageLabel } from '../../utils/formatters';
+import { formatDate, getStageLabel } from '../../utils/formatters';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Avatar from '../../components/ui/Avatar';
@@ -11,17 +11,18 @@ import EmptyState from '../../components/ui/EmptyState';
 import Skeleton from '../../components/ui/Skeleton';
 import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
-interface Application { id: string; stage: string; matchingScore: number; createdAt: string; job: { id: string; title: string; location: string; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { position?: string }; user: { id: string; fullName?: string; email: string } } }
+interface Application { id: string; stage: string; createdAt: string; job: { id: string; title: string; location: string; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { position?: string }; user: { id: string; fullName?: string; email: string } } }
 
 export default function RecruiterCandidates() {
   const navigate = useNavigate();
+  const { jobId } = useParams<{ jobId?: string }>();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [applications, setApplications] = useState<Application[]>([]);
   const [jobFilter, setJobFilter] = useState('all');
+  const selectedJobFilter = jobId || jobFilter;
   const [stageFilter, setStageFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [sortByScore, setSortByScore] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,15 +30,16 @@ export default function RecruiterCandidates() {
 
   useEffect(() => {
     let active = true;
-    api.get('/application/recruiter').then((response) => { if (active) setApplications(Array.isArray(response.data) ? response.data : []); }).catch(() => { if (active) setError('Unable to load candidates.'); }).finally(() => { if (active) setDataLoaded(true); });
+    const query = jobId ? `?jobId=${encodeURIComponent(jobId)}` : '';
+    api.get(`/application/recruiter${query}`).then((response) => { if (active) setApplications(Array.isArray(response.data) ? response.data : []); }).catch(() => { if (active) setError('Unable to load candidates.'); }).finally(() => { if (active) setDataLoaded(true); });
     return () => { active = false; };
-  }, []);
+  }, [jobId]);
 
   const jobs = useMemo(() => Array.from(new Map(applications.map((item) => [item.job.id, item.job])).values()), [applications]);
   const filtered = useMemo(() => applications.filter((item) => {
     const name = item.candidateProfile.user.fullName || item.candidateProfile.user.email;
-    return (jobFilter === 'all' || item.job.id === jobFilter) && (stageFilter === 'all' || item.stage === stageFilter) && name.toLowerCase().includes(search.toLowerCase());
-  }).sort((left, right) => sortByScore ? right.matchingScore - left.matchingScore : new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()), [applications, jobFilter, stageFilter, search, sortByScore]);
+    return (selectedJobFilter === 'all' || item.job.id === selectedJobFilter) && (stageFilter === 'all' || item.stage === stageFilter) && name.toLowerCase().includes(search.toLowerCase());
+  }).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()), [applications, selectedJobFilter, stageFilter, search]);
 
   if (isLoading) {
     return (
@@ -52,7 +54,6 @@ export default function RecruiterCandidates() {
             <Skeleton className="h-10 flex-1" />
             <Skeleton className="h-10 w-36" />
             <Skeleton className="h-10 w-36" />
-            <Skeleton className="h-10 w-28" />
           </div>
         </Card>
         <div className={`rounded-lg border overflow-hidden ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
@@ -60,7 +61,7 @@ export default function RecruiterCandidates() {
             <table className="min-w-full border-collapse text-left text-sm">
               <thead className={isDark ? 'bg-navy-900' : 'bg-slate-50'}>
                 <tr>
-                  {['Candidate', 'Position', 'Match score', 'Stage', 'Applied', ''].map((header) => (
+                  {['Candidate', 'Position', 'Stage', 'Applied', ''].map((header) => (
                     <th key={header} className="px-4 py-3">
                       <Skeleton className="h-3 w-20" />
                     </th>
@@ -84,9 +85,6 @@ export default function RecruiterCandidates() {
                         <Skeleton className="h-3 w-28" />
                         <Skeleton className="h-3 w-20" />
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton className="h-4 w-12" />
                     </td>
                     <td className="px-4 py-3">
                       <Skeleton className="h-5 w-16 rounded-full" />
@@ -128,7 +126,7 @@ export default function RecruiterCandidates() {
               className={`w-full rounded-md border bg-white py-2.5 pl-9 pr-3 text-sm outline-none transition ${isDark ? 'border-navy-700 bg-navy-900 text-slate-200 placeholder:text-slate-500 focus:border-brand' : 'border-slate-300 text-slate-700 placeholder:text-slate-400 focus:border-brand'}`}
             />
           </div>
-          <select value={jobFilter} onChange={(event) => setJobFilter(event.target.value)} className={`rounded-md border bg-white px-3 py-2.5 text-sm outline-none transition ${isDark ? 'border-navy-700 bg-navy-900 text-slate-200 focus:border-brand' : 'border-slate-300 text-slate-700 focus:border-brand'}`}>
+          <select value={selectedJobFilter} onChange={(event) => setJobFilter(event.target.value)} className={`rounded-md border bg-white px-3 py-2.5 text-sm outline-none transition ${isDark ? 'border-navy-700 bg-navy-900 text-slate-200 focus:border-brand' : 'border-slate-300 text-slate-700 focus:border-brand'}`}>
             <option value="all">All jobs</option>
             {jobs.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}
           </select>
@@ -136,10 +134,6 @@ export default function RecruiterCandidates() {
             <option value="all">All stages</option>
             {['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED'].map((stage) => <option key={stage} value={stage}>{getStageLabel(stage)}</option>)}
           </select>
-          <button type="button" onClick={() => setSortByScore((current) => !current)} className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 dark:border-navy-700 dark:text-slate-300 dark:hover:border-navy-600">
-            <ArrowDownUp className="h-4 w-4" />
-            {sortByScore ? 'Score: high to low' : 'Newest first'}
-          </button>
         </div>
       </Card>
 
@@ -161,7 +155,6 @@ export default function RecruiterCandidates() {
                 <tr>
                   <th className="px-4 py-3 font-medium">Candidate</th>
                   <th className="px-4 py-3 font-medium">Position</th>
-                  <th className="px-4 py-3 font-medium">Match score</th>
                   <th className="px-4 py-3 font-medium">Stage</th>
                   <th className="px-4 py-3 font-medium">Applied</th>
                   <th className="px-4 py-3 font-medium"></th>
@@ -185,11 +178,6 @@ export default function RecruiterCandidates() {
                       <td className="px-4 py-3">
                         <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{item.job.title}</div>
                         <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{item.job.company?.name || 'Company'}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-sm font-bold ${getScoreColor(item.matchingScore)}`}>
-                          {Math.round(item.matchingScore)}%
-                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant="slate">{getStageLabel(item.stage)}</Badge>

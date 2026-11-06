@@ -15,7 +15,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { formatDate, getErrorMessage, getInitials, getStageLabel } from '../../utils/formatters';
-import ScoreBadge from '../../components/ui/ScoreBadge';
 import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
 import Skeleton from '../../components/ui/Skeleton';
 import { useMinimumLoading } from '../../hooks/useMinimumLoading';
@@ -23,10 +22,6 @@ import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 interface Application {
   id: string;
   stage: string;
-  matchingScore: number;
-  skillScore?: number;
-  experienceScore?: number;
-  aiExplanation?: string | null;
   createdAt: string;
   job: {
     id: string;
@@ -481,14 +476,11 @@ export default function RecruiterPipeline() {
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between text-[11px] mb-2.5">
+                          <div className="flex items-center text-[11px] mb-2.5">
                             <div className="flex items-center gap-1 text-slate-500">
                               <Calendar className="h-3 w-3" />
                               <span>{formatDate(app.createdAt)}</span>
                             </div>
-                            {typeof app.matchingScore === 'number' && (
-                              <ScoreBadge score={Math.round(app.matchingScore)} size="sm" />
-                            )}
                           </div>
 
                           {app.stage === 'INTERVIEW' && (
