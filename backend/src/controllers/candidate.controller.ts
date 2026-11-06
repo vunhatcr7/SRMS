@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import path from 'path';
 import prisma from '../config/db';
 import { extractResumeText } from '../services/resume-parser.service';
-import { parseResumeWithAI } from '../services/resume-ai.service';
 import {
   InvalidResumeFileError,
   MAX_RESUME_FILE_SIZE,
@@ -410,29 +409,6 @@ export const getCandidateResume = async (req: Request, res: Response): Promise<v
   } catch (error: unknown) {
     console.error('Failed to retrieve candidate CV:', error);
     res.status(500).json({ message: 'Không thể tải CV.' });
-  }
-};
-
-export const parseResume = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = (req as any).user?.id;
-    if (!userId) {
-      res.status(401).json({ message: 'Vui lòng đăng nhập để phân tích CV.' });
-      return;
-    }
-
-    const profile = await prisma.candidateProfile.findUnique({ where: { userId } });
-    if (!profile?.resumeText?.trim()) {
-      res.status(400).json({ message: 'Hãy tải CV trước khi yêu cầu phân tích.' });
-      return;
-    }
-
-    const parsedResume = await parseResumeWithAI(profile.resumeText);
-    res.status(200).json({ message: 'Phân tích CV thành công. Hãy kiểm tra và lưu thông tin.', parsedResume });
-  } catch (error: unknown) {
-    const err = error as Error;
-    const status = err.message.includes('AI_API_KEY') ? 503 : 502;
-    res.status(status).json({ message: `Không thể phân tích CV: ${err.message}` });
   }
 };
 

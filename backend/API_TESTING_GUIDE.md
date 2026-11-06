@@ -523,7 +523,7 @@ GET /api/v1/candidate/resume/CANDIDATE_USER_ID/file
 Authorization: Bearer RECRUITER_TOKEN
 ```
 
-Luot upload moi thay CV hien hanh va cap nhat metadata. Du lieu CV legacy chi co ten file/URL va van ban trich xuat khong the khoi phuc thanh file goc. Endpoint `POST /api/v1/candidate/resume/parse` van la API rieng; upload va tai file khong goi API nay.
+Luot upload moi thay CV hien hanh va cap nhat metadata. Du lieu CV legacy chi co ten file/URL va van ban trich xuat khong the khoi phuc thanh file goc.
 
 Luu y production: filesystem local chi ben vung khi deployment gan persistent volume va cac instance dung chung volume. He thong nhieu instance nen chuyen sang object storage private (vi du Supabase Storage/S3), dung signed URL hoac API phan quyen va co chinh sach backup/xoa CV. Khong dat thu muc CV trong web root hoac commit file CV vao Git.
 

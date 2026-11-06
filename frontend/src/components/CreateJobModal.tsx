@@ -115,7 +115,7 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
                 Post a new job
               </h2>
               <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                Fill in the details so AI can match the best candidates.
+                Add the role details candidates need before they apply.
               </p>
             </div>
             <button
@@ -266,7 +266,7 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
                   }`}
                 />
                 <p className={`mt-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                  Be specific about skill names for accurate AI matching.
+                  Be specific about the skills and experience required for this role.
                 </p>
               </div>
 

@@ -127,11 +127,6 @@ async function main() {
       jobId: job.id,
       candidateId: candidateProfile.id,
       stage: ProcessStage.INTERVIEW,
-      matchingScore: 82,
-      skillScore: 88,
-      experienceScore: 75,
-      aiExplanation:
-        'Candidate has strong overlap with React, TypeScript, Node.js and REST API requirements. Experience is suitable for an MVP frontend role.',
     },
   });
 
@@ -159,7 +154,6 @@ async function main() {
   console.log(`- Job: ${job.title}`);
   console.log(`- Candidate profile: ${candidate.fullName}`);
   console.log(`- Application stage: ${application.stage}`);
-  console.log(`- Matching score: ${application.matchingScore}`);
 }
 
 main()

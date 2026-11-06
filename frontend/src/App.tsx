@@ -14,7 +14,6 @@ import CandidateJobDetail from './pages/Candidate/CandidateJobDetail';
 import CandidateApplications from './pages/Candidate/CandidateApplications';
 import CandidateApplicationDetail from './pages/Candidate/CandidateApplicationDetail';
 import CandidateProfile from './pages/Candidate/CandidateProfile';
-import AIRanking from './pages/Job/AIRanking';
 import RecruiterCandidates from './pages/Job/RecruiterCandidates';
 import RecruiterCandidateDetail from './pages/Job/RecruiterCandidateDetail';
 import RecruiterPipeline from './pages/Job/RecruiterPipeline';
@@ -48,7 +47,7 @@ function App() {
         <Route path="/recruiter" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterDashboard /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobs /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs/create" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobForm /></MainLayout></RouteGuard>} />
-        <Route path="/recruiter/jobs/:jobId/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><AIRanking /></MainLayout></RouteGuard>} />
+        <Route path="/recruiter/jobs/:jobId/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterCandidates /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs/:jobId/edit" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobForm /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs/:jobId" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobDetail /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterCandidates /></MainLayout></RouteGuard>} />

@@ -1,6 +1,6 @@
 import { RequestHandler, Router } from 'express';
 import path from 'path';
-import { getCandidateProfileByUserId, getCandidateResume, getMyCandidateProfile, getMyResume, parseResume, upsertMyCandidateProfile, uploadResume } from '../controllers/candidate.controller';
+import { getCandidateProfileByUserId, getCandidateResume, getMyCandidateProfile, getMyResume, upsertMyCandidateProfile, uploadResume } from '../controllers/candidate.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 import multer from 'multer';
 import { MAX_RESUME_FILE_SIZE } from '../services/resume-storage.service';
@@ -211,32 +211,6 @@ router.get('/resume/file', requireAuth, rolesAllowed('CANDIDATE'), getMyResume);
  *         description: Storage read error
  */
 router.get('/resume/:userId/file', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getCandidateResume);
-
-/**
- * @swagger
- * /api/v1/candidate/resume/parse:
- *   post:
- *     tags:
- *       - Candidate
- *     summary: Parse an uploaded CV with AI
- *     description: Uses the configured OpenAI-compatible provider to extract a reviewable structured resume draft from stored resume text. The candidate saves confirmed fields through the profile endpoint.
- *     security:
- *       - BearerAuth: []
- *     responses:
- *       200:
- *         description: Structured resume data for candidate review
- *       400:
- *         description: Candidate has no uploaded resume
- *       401:
- *         description: Missing or invalid token
- *       403:
- *         description: User is not CANDIDATE
- *       502:
- *         description: AI provider error or invalid provider response
- *       503:
- *         description: AI provider is not configured
- */
-router.post('/resume/parse', requireAuth, rolesAllowed('CANDIDATE'), parseResume);
 
 /**
  * @swagger

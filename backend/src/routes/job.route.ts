@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createJob, getAllJobs, getJobById, getManagedJobById, getManagedJobs, getRecommendedJobs, toggleManagedJob, updateManagedJob } from '../controllers/job.controller';
+import { createJob, getAllJobs, getJobById, getManagedJobById, getManagedJobs, toggleManagedJob, updateManagedJob } from '../controllers/job.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -76,36 +76,6 @@ router.patch('/manage/:jobId/toggle', requireAuth, rolesAllowed('RECRUITER', 'AD
  *         description: Server error
  */
 router.get('/', getAllJobs);
-
-/**
- * @swagger
- * /api/v1/job/recommendations:
- *   get:
- *     tags:
- *       - Job
- *     summary: Get jobs recommended for the current candidate
- *     description: Candidate-only endpoint. Ranks active jobs using the candidate profile skills and experience.
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 50
- *           default: 10
- *     responses:
- *       200:
- *         description: Ranked job recommendations
- *       401:
- *         description: Missing or invalid token
- *       403:
- *         description: User is not CANDIDATE
- *       404:
- *         description: Candidate profile not found
- */
-router.get('/recommendations', requireAuth, rolesAllowed('CANDIDATE'), getRecommendedJobs);
 
 router.get('/:jobId', getJobById);
 

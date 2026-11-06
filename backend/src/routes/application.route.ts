@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { applyJob, getMyApplicationById, getMyApplicationForJob, getMyApplications, getRankedApplicationsByJob, getRecruiterApplicationById, getRecruiterApplications, getRecruiterApplicationsByCandidate, updateApplicationStage } from '../controllers/application.controller';
+import { applyJob, getMyApplicationById, getMyApplicationForJob, getMyApplications, getRecruiterApplicationById, getRecruiterApplications, getRecruiterApplicationsByCandidate, updateApplicationStage } from '../controllers/application.controller';
 import { requireAuth, rolesAllowed } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -65,7 +65,7 @@ router.get('/my/:applicationId', requireAuth, rolesAllowed('CANDIDATE'), getMyAp
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Application list with job, candidate profile, and matching scores
+ *         description: Application list with job and candidate profile
  *         content:
  *           application/json:
  *             schema:
@@ -80,18 +80,6 @@ router.get('/my/:applicationId', requireAuth, rolesAllowed('CANDIDATE'), getMyAp
  *                   stage:
  *                     type: string
  *                     enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"]
- *                   matchingScore:
- *                     type: number
- *                     example: 82
- *                   skillScore:
- *                     type: number
- *                     example: 88
- *                   experienceScore:
- *                     type: number
- *                     example: 75
- *                   aiExplanation:
- *                     type: string
- *                     example: "Candidate has strong overlap with the job requirements."
  *       401:
  *         description: Missing or invalid token
  *       403:
@@ -102,36 +90,6 @@ router.get('/my/:applicationId', requireAuth, rolesAllowed('CANDIDATE'), getMyAp
 router.get('/recruiter', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplications);
 router.get('/recruiter/candidate/:candidateId', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplicationsByCandidate);
 router.get('/recruiter/:applicationId', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRecruiterApplicationById);
-
-/**
- * @swagger
- * /api/v1/application/ranking/{jobId}:
- *   get:
- *     tags:
- *       - Application
- *     summary: Rank applications for a job
- *     description: Returns applications ordered by matching score. Recruiters can only view their own jobs; managers and admins can view all jobs.
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: jobId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Ranked candidate applications
- *       400:
- *         description: Missing job id
- *       401:
- *         description: Missing or invalid token
- *       403:
- *         description: Recruiter does not own this job
- *       404:
- *         description: Job not found
- */
-router.get('/ranking/:jobId', requireAuth, rolesAllowed('RECRUITER', 'MANAGER', 'ADMIN'), getRankedApplicationsByJob);
 
 /**
  * @swagger
