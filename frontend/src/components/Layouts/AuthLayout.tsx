@@ -23,7 +23,7 @@ export default function AuthLayout({ eyebrow, title, description, children }: Au
           <p className="mt-3 text-sm leading-relaxed text-slate-400 max-w-sm">{description}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} SRMS. Smart Recruitment & AI Talent Matching System.</p>
+          <p className="text-xs text-slate-500">© {new Date().getFullYear()} SRMS. Smart Recruitment Management System.</p>
         </div>
       </div>
 
