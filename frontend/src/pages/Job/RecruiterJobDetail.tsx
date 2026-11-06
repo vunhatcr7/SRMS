@@ -6,7 +6,7 @@ import api from '../../api/axios';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { getErrorMessage } from '../../utils/formatters';
 
-interface Job { id: string; title: string; description: string; requirements: string; location: string; salaryRange?: string | null; isActive: boolean; createdAt: string; company?: { name: string }; _count?: { applications: number } }
+interface Job { id: string; title: string; description: string; requirements: string; benefits?: string | null; location: string; salaryRange?: string | null; isActive: boolean; createdAt: string; company?: { name: string }; _count?: { applications: number } }
 
 export default function RecruiterJobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -93,9 +93,12 @@ export default function RecruiterJobDetail() {
           <h2 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Requirements</h2>
           <p className={`mt-3 text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.requirements}</p>
         </section>
+        {job.benefits && <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
+          <h2 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Benefits</h2>
+          <p className={`mt-3 text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.benefits}</p>
+        </section>}
       </div>
     </div>
   );
 }
-
 

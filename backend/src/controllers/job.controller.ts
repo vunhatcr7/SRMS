@@ -14,6 +14,12 @@ export const createJob = async (req: Request, res: Response): Promise<void> => {
     const salaryRange = typeof body.salaryRange === 'string' ? body.salaryRange.trim() : undefined;
     const location = typeof body.location === 'string' ? body.location.trim() : '';
     const companyName = typeof body.companyName === 'string' ? body.companyName.trim() : '';
+    const rawBenefits = body.benefits;
+    if (rawBenefits !== undefined && rawBenefits !== null && typeof rawBenefits !== 'string') {
+      res.status(400).json({ message: 'Quyền lợi phải là chuỗi văn bản.' });
+      return;
+    }
+    const benefits = typeof rawBenefits === 'string' ? rawBenefits.trim() || null : rawBenefits;
 
     // Lấy thông tin User từ token (đã qua middleware auth)
     const recruiterId = (req as any).user?.id;
@@ -32,6 +38,10 @@ export const createJob = async (req: Request, res: Response): Promise<void> => {
 
     if ([title, description, requirements, location, companyName].some((value) => value.length > 5000)) {
       res.status(400).json({ message: 'Nội dung tin tuyển dụng vượt quá độ dài cho phép.' });
+      return;
+    }
+    if (typeof benefits === 'string' && benefits.length > 5000) {
+      res.status(400).json({ message: 'Nội dung quyền lợi vượt quá độ dài cho phép.' });
       return;
     }
 
@@ -54,6 +64,7 @@ export const createJob = async (req: Request, res: Response): Promise<void> => {
         requirements,
         salaryRange,
         location,
+        benefits: benefits ?? undefined,
         companyId: company.id,
         recruiterId: recruiterId
       }
@@ -118,6 +129,12 @@ export const updateManagedJob = async (req: Request, res: Response): Promise<voi
     const requirements = typeof body.requirements === 'string' ? body.requirements.trim() : '';
     const location = typeof body.location === 'string' ? body.location.trim() : '';
     const salaryRange = typeof body.salaryRange === 'string' ? body.salaryRange.trim() : null;
+    const rawBenefits = body.benefits;
+    if (rawBenefits !== undefined && rawBenefits !== null && typeof rawBenefits !== 'string') {
+      res.status(400).json({ message: 'Quyền lợi phải là chuỗi văn bản.' });
+      return;
+    }
+    const benefits = typeof rawBenefits === 'string' ? rawBenefits.trim() || null : rawBenefits;
     const isActive = typeof body.isActive === 'boolean' ? body.isActive : undefined;
     const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (!job) {
@@ -132,7 +149,11 @@ export const updateManagedJob = async (req: Request, res: Response): Promise<voi
       res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin công việc.' });
       return;
     }
-    const updatedJob = await prisma.job.update({ where: { id: jobId }, data: { title, description, requirements, location, salaryRange, ...(isActive === undefined ? {} : { isActive }) }, include: { company: true, _count: { select: { applications: true } } } });
+    if (typeof benefits === 'string' && benefits.length > 5000) {
+      res.status(400).json({ message: 'Nội dung quyền lợi vượt quá độ dài cho phép.' });
+      return;
+    }
+    const updatedJob = await prisma.job.update({ where: { id: jobId }, data: { title, description, requirements, location, salaryRange, ...(benefits === undefined ? {} : { benefits }), ...(isActive === undefined ? {} : { isActive }) }, include: { company: true, _count: { select: { applications: true } } } });
     res.status(200).json({ message: 'Cập nhật công việc thành công.', job: updatedJob });
   } catch (error: unknown) {
     const err = error as Error;

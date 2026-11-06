@@ -39,6 +39,10 @@ const router = Router();
  *               salaryRange:
  *                 type: string
  *                 example: "8M - 12M"
+ *               benefits:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "Health insurance, annual leave, flexible hours"
  *               location:
  *                 type: string
  *                 example: "Ho Chi Minh City"
