@@ -24,18 +24,6 @@ export const formatDateTime = (date: string | Date): string => {
   });
 };
 
-export const getScoreColor = (score: number): string => {
-  if (score >= 75) return 'text-emerald-400';
-  if (score >= 50) return 'text-amber-400';
-  return 'text-rose-400';
-};
-
-export const getScoreBgColor = (score: number): string => {
-  if (score >= 75) return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
-  if (score >= 50) return 'bg-amber-500/10 border-amber-500/30 text-amber-400';
-  return 'bg-rose-500/10 border-rose-500/30 text-rose-400';
-};
-
 export const getStageLabel = (stage: string): string => {
   const map: Record<string, string> = {
     APPLIED: 'Applied',
