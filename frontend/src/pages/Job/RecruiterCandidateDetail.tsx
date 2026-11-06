@@ -3,11 +3,11 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, FileText, Mail, Phone, User } from 'lucide-react';
 import api from '../../api/axios';
-import { getErrorMessage, getScoreColor } from '../../utils/formatters';
+import { getErrorMessage } from '../../utils/formatters';
 import StatusBadge from '../../components/ui/StatusBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
-interface Application { id: string; stage: string; matchingScore: number; skillScore: number; experienceScore: number; aiExplanation?: string | null; createdAt: string; job: { title: string; location: string; salaryRange?: string | null; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { years?: number; position?: string; summary?: string }; education?: { summary?: string; school?: string; major?: string }; resumeUrl?: string | null; user: { id: string; fullName?: string; email: string; phone?: string } } }
+interface Application { id: string; stage: string; createdAt: string; job: { title: string; location: string; salaryRange?: string | null; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { years?: number; position?: string; summary?: string }; education?: { summary?: string; school?: string; major?: string }; resumeUrl?: string | null; user: { id: string; fullName?: string; email: string; phone?: string } } }
 
 export default function RecruiterCandidateDetail() {
   const { candidateId } = useParams<{ candidateId: string }>();
@@ -85,9 +85,6 @@ export default function RecruiterCandidateDetail() {
                 </div>
                 <div className="text-right">
                   <StatusBadge stage={app.stage} />
-                  <div className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                    Score: <span className={getScoreColor(app.matchingScore)}>{Math.round(app.matchingScore)}%</span>
-                  </div>
                 </div>
               </div>
             ))}
@@ -97,5 +94,4 @@ export default function RecruiterCandidateDetail() {
     </div>
   );
 }
-
 

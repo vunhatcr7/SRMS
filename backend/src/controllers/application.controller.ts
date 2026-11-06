@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { ProcessStage } from '@prisma/client';
 import prisma from '../config/db';
-import { calculateMatching } from '../services/matching.service';
 
 const validStages = Object.values(ProcessStage);
 const isHttpUrl = (value: string): boolean => /^https?:\/\/\S+$/i.test(value);
@@ -29,7 +28,7 @@ export const getMyApplicationForJob = async (req: Request, res: Response): Promi
 
     const application = await prisma.application.findUnique({
       where: { jobId_candidateId: { jobId, candidateId: candidateProfile.id } },
-      select: { id: true, jobId: true, stage: true, matchingScore: true, skillScore: true, experienceScore: true, aiExplanation: true, createdAt: true },
+      select: { id: true, jobId: true, stage: true, createdAt: true },
     });
 
     res.status(200).json({ applied: Boolean(application), application });
@@ -104,11 +103,13 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
           jobId,
           candidateId: candidateProfile.id,
           stage: ProcessStage.APPLIED,
-          ...calculateMatching(
-            candidateProfile.skills,
-            candidateProfile.experience,
-            jobExists.requirements,
-          ),
+        },
+        select: {
+          id: true,
+          jobId: true,
+          candidateId: true,
+          stage: true,
+          createdAt: true,
         },
       });
     } catch (error: unknown) {
@@ -295,7 +296,7 @@ export const getRecruiterApplicationsByCandidate = async (req: Request, res: Res
         job: { include: { company: { select: { name: true, logo: true, website: true } } } },
         candidateProfile: { include: { user: { select: { id: true, fullName: true, email: true, phone: true, avatar: true } } } },
       },
-      orderBy: { matchingScore: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (applications.length === 0) {
@@ -307,63 +308,6 @@ export const getRecruiterApplicationsByCandidate = async (req: Request, res: Res
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({ message: 'Lỗi server khi lấy hồ sơ ứng viên.', error: err.message });
-  }
-};
-
-export const getRankedApplicationsByJob = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const requesterId = (req as any).user?.id;
-    const requesterRole = (req as any).user?.role;
-    const jobId = Array.isArray(req.params.jobId) ? req.params.jobId[0].trim() : req.params.jobId?.trim();
-
-    if (!requesterId || !requesterRole) {
-      res.status(401).json({ message: 'Vui long dang nhap.' });
-      return;
-    }
-
-    if (!jobId) {
-      res.status(400).json({ message: 'Thieu jobId.' });
-      return;
-    }
-
-    const job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, title: true, recruiterId: true } });
-    if (!job) {
-      res.status(404).json({ message: 'Khong tim thay cong viec.' });
-      return;
-    }
-
-    if (requesterRole === 'RECRUITER' && job.recruiterId !== requesterId) {
-      res.status(403).json({ message: 'Ban khong co quyen xem xep hang cua cong viec nay.' });
-      return;
-    }
-
-    const applications = await prisma.application.findMany({
-      where: { jobId },
-      include: {
-        candidateProfile: {
-          include: {
-            user: { select: { id: true, fullName: true, email: true, phone: true, avatar: true } },
-          },
-        },
-      },
-      orderBy: [
-        { matchingScore: 'desc' },
-        { skillScore: 'desc' },
-        { createdAt: 'asc' },
-      ],
-    });
-
-    res.status(200).json({
-      job,
-      total: applications.length,
-      applications: applications.map((application, index) => ({
-        rank: index + 1,
-        ...application,
-      })),
-    });
-  } catch (error: unknown) {
-    const err = error as Error;
-    res.status(500).json({ message: 'Loi server khi xep hang ung vien.', error: err.message });
   }
 };
 

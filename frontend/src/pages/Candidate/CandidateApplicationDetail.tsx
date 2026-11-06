@@ -3,7 +3,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { AlertCircle, ArrowLeft, Briefcase, Building2, FileText } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
-import { formatDate, getErrorMessage, getScoreColor, getStageLabel } from '../../utils/formatters';
+import { formatDate, getErrorMessage, getStageLabel } from '../../utils/formatters';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Skeleton from '../../components/ui/Skeleton';
 import { useMinimumLoading } from '../../hooks/useMinimumLoading';
@@ -11,10 +11,6 @@ import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 interface Application {
   id: string;
   stage: string;
-  matchingScore?: number;
-  skillScore?: number;
-  experienceScore?: number;
-  aiExplanation?: string | null;
   createdAt: string;
   job: { title: string; location: string; description: string; requirements: string; salaryRange?: string | null; company?: { name: string; website?: string | null } };
 }
@@ -110,17 +106,9 @@ export default function CandidateApplicationDetail() {
       </div>
 
       <div className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div>
-            <h2 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Recruitment progress</h2>
-            <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Current stage: <span className="ml-1"><StatusBadge stage={application.stage} /></span></p>
-          </div>
-          {typeof application.matchingScore === 'number' && (
-            <div className="text-left sm:text-right">
-              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Matching score</p>
-              <p className={`text-3xl font-black ${getScoreColor(application.matchingScore)}`}>{Math.round(application.matchingScore)}%</p>
-            </div>
-          )}
+        <div>
+          <h2 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Recruitment progress</h2>
+          <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Current stage: <span className="ml-1"><StatusBadge stage={application.stage} /></span></p>
         </div>
 
         {rejected ? (
@@ -155,5 +143,3 @@ export default function CandidateApplicationDetail() {
     </div>
   );
 }
-
-

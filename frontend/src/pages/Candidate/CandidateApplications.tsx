@@ -13,7 +13,6 @@ import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 interface Application {
   id: string;
   stage: string;
-  matchingScore?: number;
   createdAt: string;
   job: { title: string; location: string; company?: { name: string } };
 }
