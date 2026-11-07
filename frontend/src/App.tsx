@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
-import JobList from './pages/Job/JobList';
 import RecruiterDashboard from './pages/Job/RecruiterDashboard';
 import RecruiterJobs from './pages/Job/RecruiterJobs';
 import RecruiterJobDetail from './pages/Job/RecruiterJobDetail';
@@ -22,6 +21,9 @@ import CandidateInterviews from './pages/Candidate/CandidateInterviews';
 import NotFound from './pages/NotFound';
 import PlaceholderPage from './pages/PlaceholderPage';
 import RouteGuard from './components/RouteGuard';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminUsers from './pages/Admin/AdminUsers';
+import AdminJobs from './pages/Admin/AdminJobs';
 
 function App() {
   return (
@@ -56,9 +58,9 @@ function App() {
         <Route path="/recruiter/interviews" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterInterviews /></MainLayout></RouteGuard>} />
 
         {/* Admin application */}
-        <Route path="/admin" element={<RouteGuard roles={['ADMIN']}><MainLayout><PlaceholderPage title="Admin dashboard" description="System metrics will be available here." /></MainLayout></RouteGuard>} />
-        <Route path="/admin/users" element={<RouteGuard roles={['ADMIN']}><MainLayout><PlaceholderPage title="Users" description="User administration will be available here." /></MainLayout></RouteGuard>} />
-        <Route path="/admin/jobs" element={<RouteGuard roles={['ADMIN']}><MainLayout><JobList /></MainLayout></RouteGuard>} />
+        <Route path="/admin" element={<RouteGuard roles={['ADMIN']}><MainLayout><AdminDashboard /></MainLayout></RouteGuard>} />
+        <Route path="/admin/users" element={<RouteGuard roles={['ADMIN']}><MainLayout><AdminUsers /></MainLayout></RouteGuard>} />
+        <Route path="/admin/jobs" element={<RouteGuard roles={['ADMIN']}><MainLayout><AdminJobs /></MainLayout></RouteGuard>} />
         <Route path="/admin/settings" element={<RouteGuard roles={['ADMIN']}><MainLayout><PlaceholderPage title="Settings" description="System settings will be available here." /></MainLayout></RouteGuard>} />
 
         {/* Legacy links remain valid while callers move to the role-based paths. */}

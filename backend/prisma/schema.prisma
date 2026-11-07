@@ -106,6 +106,7 @@ model Job {
   requirements String // Yêu cầu kỹ năng, kinh nghiệm từ doanh nghiệp
   salaryRange  String? // Ví dụ: "15M - 25M"
   location     String // Địa điểm làm việc (Hà Nội, TP.HCM, Remote)
+  benefits     String?
   isActive     Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

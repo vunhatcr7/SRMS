@@ -22,6 +22,7 @@ interface FormData {
   salaryRange: string;
   description: string;
   requirements: string;
+  benefits: string;
 }
 
 const INITIAL_FORM: FormData = {
@@ -31,6 +32,7 @@ const INITIAL_FORM: FormData = {
   salaryRange: '',
   description: '',
   requirements: '',
+  benefits: '',
 };
 
 interface CreateJobModalProps {
@@ -268,6 +270,24 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
                 <p className={`mt-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                   Be specific about the skills and experience required for this role.
                 </p>
+              </div>
+
+              <div>
+                <label className={`mb-1.5 flex items-center gap-1.5 text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                  Benefits
+                </label>
+                <textarea
+                  name="benefits"
+                  rows={3}
+                  value={formData.benefits}
+                  onChange={handleChange}
+                  placeholder="Health insurance, annual leave, flexible hours..."
+                  className={`w-full resize-none rounded border px-3 py-2.5 text-sm outline-none placeholder:text-slate-500 transition ${
+                    isDark
+                      ? 'border-navy-700 bg-navy-900 text-slate-100 focus:border-brand'
+                      : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-brand'
+                  }`}
+                />
               </div>
 
             </div>
