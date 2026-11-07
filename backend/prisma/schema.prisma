@@ -75,16 +75,20 @@ model RecruiterProfile {
 
 // 6. Bảng hồ sơ ứng viên (MVP: lưu dữ liệu cơ bản từ CV + kết quả match)
 model CandidateProfile {
-  id           String        @id @default(uuid())
-  userId       String        @unique
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skills       String[]      @default([])
-  experience   Json?
-  education    Json?
-  resumeUrl    String?
-  resumeText   String?
-  createdAt    DateTime      @default(now())
-  applications Application[]
+  id               String        @id @default(uuid())
+  userId           String        @unique
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills           String[]      @default([])
+  experience       Json?
+  education        Json?
+  resumeUrl        String?
+  resumeText       String?
+  resumeStorageKey String?       @unique
+  resumeFileName   String?
+  resumeMimeType   String?
+  resumeFileSize   Int?
+  createdAt        DateTime      @default(now())
+  applications     Application[]
 }
 
 // 7. Bảng quản lý tin tuyển dụng (Job Description - JD)

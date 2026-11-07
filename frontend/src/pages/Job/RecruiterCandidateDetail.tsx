@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, FileText, Mail, Phone, User } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, FileText, Mail, Phone, User } from 'lucide-react';
 import api from '../../api/axios';
 import { getErrorMessage } from '../../utils/formatters';
+import { openResumeFile } from '../../utils/resumeFiles';
 import StatusBadge from '../../components/ui/StatusBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
-interface Application { id: string; stage: string; createdAt: string; job: { title: string; location: string; salaryRange?: string | null; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { years?: number; position?: string; summary?: string }; education?: { summary?: string; school?: string; major?: string }; resumeUrl?: string | null; user: { id: string; fullName?: string; email: string; phone?: string } } }
+interface Application { id: string; stage: string; createdAt: string; job: { title: string; location: string; salaryRange?: string | null; company?: { name: string } }; candidateProfile: { skills: string[]; experience?: { years?: number; position?: string; summary?: string }; education?: { summary?: string; school?: string; major?: string }; resumeUrl?: string | null; resumeFileName?: string | null; user: { id: string; fullName?: string; email: string; phone?: string } } }
 
 export default function RecruiterCandidateDetail() {
   const { candidateId } = useParams<{ candidateId: string }>();
@@ -15,8 +16,22 @@ export default function RecruiterCandidateDetail() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [resumeError, setResumeError] = useState('');
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  const handleResumeAction = async (download: boolean, fileName: string) => {
+    setResumeError('');
+    try {
+      await openResumeFile(
+        `/candidate/resume/${encodeURIComponent(candidateId || '')}/file${download ? '?download=true' : ''}`,
+        fileName,
+        download,
+      );
+    } catch (requestError: unknown) {
+      setResumeError(getErrorMessage(requestError));
+    }
+  };
 
   useEffect(() => { if (!candidateId) return; let active = true; api.get(`/application/recruiter/candidate/${candidateId}`).then((response) => { if (active) setApplications(Array.isArray(response.data) ? response.data : []); }).catch((requestError) => { if (active) setError(getErrorMessage(requestError)); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [candidateId]);
 
@@ -67,11 +82,21 @@ export default function RecruiterCandidateDetail() {
           <h3 className={`mt-5 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Education</h3>
           <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{candidate.education?.summary || [candidate.education?.school, candidate.education?.major].filter(Boolean).join(' - ') || 'No education information.'}</p>
 
-          {candidate.resumeUrl && (
+          {candidate.resumeFileName ? (
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button type="button" onClick={() => void handleResumeAction(false, candidate.resumeFileName || 'resume')} className={`inline-flex items-center gap-2 rounded border px-4 py-2 text-xs font-semibold transition hover:opacity-80 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}>
+                <FileText className="h-4 w-4" />View resume <ExternalLink className="h-3 w-3 opacity-60" />
+              </button>
+              <button type="button" onClick={() => void handleResumeAction(true, candidate.resumeFileName || 'resume')} className={`inline-flex items-center gap-2 rounded border px-4 py-2 text-xs font-semibold transition hover:opacity-80 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}>
+                <Download className="h-4 w-4" />Download resume
+              </button>
+            </div>
+          ) : candidate.resumeUrl && (
             <a href={candidate.resumeUrl} target="_blank" rel="noreferrer" className={`mt-5 inline-flex items-center gap-2 rounded border px-4 py-2 text-xs font-semibold transition hover:opacity-80 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}>
               <FileText className="h-4 w-4" /> View resume <ExternalLink className="h-3 w-3 opacity-60" />
             </a>
           )}
+          {resumeError && <p role="alert" className="mt-2 text-xs text-rose-500">{resumeError}</p>}
         </section>
 
         <section className={`rounded-lg border p-5 ${isDark ? 'border-navy-700 bg-navy-800' : 'border-slate-200 bg-white'}`}>
@@ -94,4 +119,3 @@ export default function RecruiterCandidateDetail() {
     </div>
   );
 }
-

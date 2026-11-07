@@ -7,6 +7,7 @@ dist/
 build/
 **/dist/
 **/build/
+backend/storage/cv/
 
 # Environment variables (Biến môi trường - BẢO MẬT)
 .env
