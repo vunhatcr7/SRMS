@@ -9,6 +9,7 @@ import {
   Search,
   Filter,
   RefreshCw,
+  CalendarPlus,
   CheckCircle2,
   XCircle,
   Edit3,
@@ -312,15 +313,25 @@ export default function RecruiterInterviews() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className={`inline-flex items-center gap-1.5 rounded border px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-brand' : ''}`} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/recruiter/pipeline')}
+            className="inline-flex items-center gap-1.5 rounded bg-brand px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark"
+          >
+            <CalendarPlus className="h-3.5 w-3.5" />
+            <span>Schedule from pipeline</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className={`inline-flex items-center gap-1.5 rounded border px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-brand' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {error && (

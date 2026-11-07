@@ -95,6 +95,9 @@ function ModalContent({
   const [interviewerName, setInterviewerName] = useState(initialValues.interviewerName);
   const [notes, setNotes] = useState(initialValues.notes);
   const [status, setStatus] = useState(initialValues.status);
+  const availableStatuses = existingInterview?.status === 'SCHEDULED'
+    ? ['SCHEDULED', 'COMPLETED', 'CANCELLED']
+    : [initialValues.status];
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -102,8 +105,6 @@ function ModalContent({
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    if (!open) return;
-
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
@@ -114,7 +115,7 @@ function ModalContent({
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,9 +267,11 @@ function ModalContent({
                   onChange={(e) => setStatus(e.target.value)}
                   className={`w-full rounded border bg-transparent px-3 py-2 text-sm outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`}
                 >
-                  <option value="SCHEDULED">Scheduled</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="CANCELLED">Cancelled</option>
+                  {availableStatuses.map((value) => (
+                    <option key={value} value={value}>
+                      {value.charAt(0) + value.slice(1).toLowerCase()}
+                    </option>
+                  ))}
                 </select>
               </div>
             ) : (

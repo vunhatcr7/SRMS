@@ -2,6 +2,38 @@ import { Request, Response } from 'express';
 import prisma from '../config/db';
 
 const VALID_INTERVIEW_STATUSES = ['SCHEDULED', 'COMPLETED', 'CANCELLED'];
+const VALID_INTERVIEW_TYPES = ['ONLINE', 'OFFLINE'];
+const ALLOWED_STATUS_TRANSITIONS: Record<string, readonly string[]> = {
+  SCHEDULED: ['SCHEDULED', 'COMPLETED', 'CANCELLED'],
+  COMPLETED: ['COMPLETED'],
+  CANCELLED: ['CANCELLED'],
+};
+const MAX_LOCATION_LENGTH = 2000;
+const MAX_INTERVIEWER_NAME_LENGTH = 200;
+const MAX_NOTES_LENGTH = 5000;
+
+const parseScheduledAt = (value: unknown): Date | null => {
+  if (typeof value !== 'string' || !value.trim()) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const findScheduledConflict = async (
+  applicationId: string,
+  scheduledAt: Date,
+  excludeInterviewId?: string,
+) => prisma.interview.findFirst({
+  where: {
+    applicationId,
+    scheduledAt,
+    status: 'SCHEDULED',
+    ...(excludeInterviewId ? { id: { not: excludeInterviewId } } : {}),
+  },
+  select: { id: true },
+});
 
 const getApplication = async (applicationId: string) => {
   return prisma.application.findUnique({
@@ -30,31 +62,45 @@ export const createInterview = async (req: Request, res: Response): Promise<void
   try {
     const userId = (req as any).user?.id;
     const userRole = (req as any).user?.role;
-    const { applicationId, scheduledAt, locationOrLink, interviewerName, type, notes } = req.body ?? {};
-    const safeApplicationId = typeof applicationId === 'string'
-      ? applicationId.trim()
-      : Array.isArray(applicationId)
-        ? applicationId[0]
-        : '';
+    const body = req.body ?? {};
+    const safeApplicationId = typeof body.applicationId === 'string' ? body.applicationId.trim() : '';
 
     if (!userId || !userRole) {
       res.status(401).json({ message: 'Vui long dang nhap.' });
       return;
     }
 
-    const safeLocationOrLink = typeof locationOrLink === 'string' ? locationOrLink.trim() : '';
-    const safeInterviewerName = typeof interviewerName === 'string' ? interviewerName.trim() : '';
+    const safeLocationOrLink = typeof body.locationOrLink === 'string' ? body.locationOrLink.trim() : '';
+    const safeInterviewerName = typeof body.interviewerName === 'string' ? body.interviewerName.trim() : '';
+    const scheduledDate = parseScheduledAt(body.scheduledAt);
 
-    if (!safeApplicationId || !scheduledAt || !safeLocationOrLink || !safeInterviewerName) {
+    if (!safeApplicationId || !scheduledDate || !safeLocationOrLink || !safeInterviewerName) {
       res.status(400).json({
         message: 'Thieu thong tin lich phong van. Can co: applicationId, scheduledAt, locationOrLink, interviewerName.',
       });
       return;
     }
 
-    const scheduledDate = new Date(scheduledAt);
-    if (Number.isNaN(scheduledDate.getTime())) {
-      res.status(400).json({ message: 'Thoi gian phong van khong hop le.' });
+    if (safeLocationOrLink.length > MAX_LOCATION_LENGTH || safeInterviewerName.length > MAX_INTERVIEWER_NAME_LENGTH) {
+      res.status(400).json({ message: 'Dia diem/link hoac ten nguoi phong van vuot qua do dai cho phep.' });
+      return;
+    }
+
+    const safeType = body.type === undefined || body.type === null || body.type === ''
+      ? 'ONLINE'
+      : typeof body.type === 'string' ? body.type.trim().toUpperCase() : '';
+    if (!VALID_INTERVIEW_TYPES.includes(safeType)) {
+      res.status(400).json({ message: `type khong hop le. Chi chap nhan: ${VALID_INTERVIEW_TYPES.join(', ')}` });
+      return;
+    }
+
+    if (body.notes !== undefined && body.notes !== null && typeof body.notes !== 'string') {
+      res.status(400).json({ message: 'notes khong hop le.' });
+      return;
+    }
+    const safeNotes = typeof body.notes === 'string' ? body.notes.trim() || null : null;
+    if (safeNotes && safeNotes.length > MAX_NOTES_LENGTH) {
+      res.status(400).json({ message: 'Ghi chu vuot qua do dai cho phep.' });
       return;
     }
 
@@ -69,8 +115,11 @@ export const createInterview = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const safeType = typeof type === 'string' && type.trim() ? type.trim() : 'ONLINE';
-    const safeNotes = typeof notes === 'string' && notes.trim() ? notes.trim() : null;
+    const scheduledConflict = await findScheduledConflict(safeApplicationId, scheduledDate);
+    if (scheduledConflict) {
+      res.status(409).json({ message: 'Don ung tuyen da co lich phong van dang dien ra vao thoi diem nay.' });
+      return;
+    }
 
     const interview = await prisma.interview.create({
       data: {
@@ -277,10 +326,16 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
     const userId = (req as any).user?.id;
     const userRole = (req as any).user?.role;
     const interviewId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { scheduledAt, locationOrLink, interviewerName, status, type, notes } = req.body ?? {};
+    const body = req.body ?? {};
 
     if (!userId || !userRole || !interviewId) {
       res.status(401).json({ message: 'Vui long dang nhap.' });
+      return;
+    }
+
+    const editableFields = ['scheduledAt', 'locationOrLink', 'interviewerName', 'status', 'type', 'notes'];
+    if (!editableFields.some((field) => Object.prototype.hasOwnProperty.call(body, field))) {
+      res.status(400).json({ message: 'Khong co thong tin hop le de cap nhat.' });
       return;
     }
 
@@ -304,36 +359,87 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const scheduledDate = scheduledAt ? new Date(scheduledAt) : undefined;
-    if (scheduledDate && Number.isNaN(scheduledDate.getTime())) {
+    const scheduledDate = body.scheduledAt === undefined
+      ? undefined
+      : parseScheduledAt(body.scheduledAt);
+    if (body.scheduledAt !== undefined && !scheduledDate) {
       res.status(400).json({ message: 'Thoi gian phong van khong hop le.' });
       return;
     }
 
-    if (locationOrLink !== undefined && (typeof locationOrLink !== 'string' || !locationOrLink.trim())) {
+    if (body.locationOrLink !== undefined && (typeof body.locationOrLink !== 'string' || !body.locationOrLink.trim() || body.locationOrLink.trim().length > MAX_LOCATION_LENGTH)) {
       res.status(400).json({ message: 'locationOrLink khong hop le.' });
       return;
     }
 
-    if (interviewerName !== undefined && (typeof interviewerName !== 'string' || !interviewerName.trim())) {
+    if (body.interviewerName !== undefined && (typeof body.interviewerName !== 'string' || !body.interviewerName.trim() || body.interviewerName.trim().length > MAX_INTERVIEWER_NAME_LENGTH)) {
       res.status(400).json({ message: 'interviewerName khong hop le.' });
       return;
     }
 
-    if (status !== undefined && (!VALID_INTERVIEW_STATUSES.includes(status.trim().toUpperCase()))) {
-      res.status(400).json({ message: `status khong hop le. Chi chap nhan: ${VALID_INTERVIEW_STATUSES.join(', ')}` });
+    let normalizedStatus: string | undefined;
+    if (body.status !== undefined) {
+      const candidateStatus = typeof body.status === 'string' ? body.status.trim().toUpperCase() : '';
+      if (!VALID_INTERVIEW_STATUSES.includes(candidateStatus)) {
+        res.status(400).json({ message: `status khong hop le. Chi chap nhan: ${VALID_INTERVIEW_STATUSES.join(', ')}` });
+        return;
+      }
+      normalizedStatus = candidateStatus;
+    }
+
+    let normalizedType: string | undefined;
+    if (body.type !== undefined) {
+      const candidateType = body.type === null || body.type === ''
+        ? 'ONLINE'
+        : typeof body.type === 'string' ? body.type.trim().toUpperCase() : '';
+      if (!VALID_INTERVIEW_TYPES.includes(candidateType)) {
+        res.status(400).json({ message: `type khong hop le. Chi chap nhan: ${VALID_INTERVIEW_TYPES.join(', ')}` });
+        return;
+      }
+      normalizedType = candidateType;
+    }
+
+    let normalizedNotes: string | null | undefined;
+    if (body.notes !== undefined) {
+      if (body.notes !== null && typeof body.notes !== 'string') {
+        res.status(400).json({ message: 'notes khong hop le.' });
+        return;
+      }
+      normalizedNotes = typeof body.notes === 'string' ? body.notes.trim() || null : null;
+      if (normalizedNotes && normalizedNotes.length > MAX_NOTES_LENGTH) {
+        res.status(400).json({ message: 'Ghi chu vuot qua do dai cho phep.' });
+        return;
+      }
+    }
+
+    const resultingStatus = normalizedStatus ?? interview.status;
+    if (!ALLOWED_STATUS_TRANSITIONS[interview.status]?.includes(resultingStatus)) {
+      res.status(409).json({ message: 'Khong the chuyen lich phong van sang trang thai nay.' });
+      return;
+    }
+
+    if (
+      resultingStatus === 'SCHEDULED'
+      && (scheduledDate !== undefined || normalizedStatus === 'SCHEDULED')
+      && await findScheduledConflict(
+        interview.applicationId,
+        scheduledDate ?? interview.scheduledAt,
+        interviewId,
+      )
+    ) {
+      res.status(409).json({ message: 'Don ung tuyen da co lich phong van dang dien ra vao thoi diem nay.' });
       return;
     }
 
     const updatedInterview = await prisma.interview.update({
       where: { id: interviewId },
       data: {
-        scheduledAt: scheduledDate,
-        locationOrLink: locationOrLink ? locationOrLink.trim() : undefined,
-        interviewerName: interviewerName ? interviewerName.trim() : undefined,
-        status: status ? status.trim().toUpperCase() : undefined,
-        type: type !== undefined ? (typeof type === 'string' && type.trim() ? type.trim() : 'ONLINE') : undefined,
-        notes: notes !== undefined ? (typeof notes === 'string' && notes.trim() ? notes.trim() : null) : undefined,
+        scheduledAt: scheduledDate ?? undefined,
+        locationOrLink: body.locationOrLink !== undefined ? body.locationOrLink.trim() : undefined,
+        interviewerName: body.interviewerName !== undefined ? body.interviewerName.trim() : undefined,
+        status: normalizedStatus,
+        type: normalizedType,
+        notes: normalizedNotes,
       },
     });
 
@@ -371,6 +477,16 @@ export const cancelInterview = async (req: Request, res: Response): Promise<void
 
     if (!canAccess) {
       res.status(403).json({ message: 'Ban khong co quyen huy lich phong van nay.' });
+      return;
+    }
+
+    if (interview.status === 'COMPLETED') {
+      res.status(409).json({ message: 'Khong the huy lich phong van da hoan thanh.' });
+      return;
+    }
+
+    if (interview.status === 'CANCELLED') {
+      res.status(200).json({ message: 'Lich phong van da duoc huy truoc do.', interview });
       return;
     }
 
