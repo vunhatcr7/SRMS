@@ -9,6 +9,7 @@ import applicationRoutes from '../src/routes/application.route';
 import candidateRoutes from '../src/routes/candidate.route';
 import interviewRoutes from '../src/routes/interview.route';
 import dashboardRoutes from '../src/routes/dashboard.route';
+import adminRoutes from '../src/routes/admin.route';
 dotenv.config();
 
 const app = express();
@@ -74,6 +75,7 @@ app.use('/api/v1/application', applicationRoutes);
 app.use('/api/v1/candidate', candidateRoutes);
 app.use('/api/v1/interview', interviewRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/admin', adminRoutes);
 // Tuyến đường kiểm tra nhanh hệ thống
 app.get('/api/v1/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'OK', message: 'Backend is running' });
