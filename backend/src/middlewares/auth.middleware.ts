@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret, JwtSecretConfigurationError } from '../utils/jwt-secret';
 
 // 1. Bộ lọc kiểm tra Đăng nhập chung (Yêu cầu phải có Token hợp lệ)
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
@@ -12,10 +13,9 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
     }
 
     const token = authHeader.split(' ')[1];
-    const secretKey = process.env.JWT_SECRET || 'srms_platform_secret_fallback_key';
 
     // Giải mã mã khóa JWT
-    const decoded = jwt.verify(token, secretKey) as { id: string; email: string; role: any };
+    const decoded = jwt.verify(token, getJwtSecret()) as { id: string; email: string; role: any };
 
     // Đút thông tin người dùng vào req để các controller phía sau sử dụng
     req.user = {
@@ -26,6 +26,12 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
 
     next(); // Cho phép đi tiếp vào Controller
   } catch (error) {
+    if (error instanceof JwtSecretConfigurationError) {
+      console.error('JWT authentication configuration error:', error.message);
+      res.status(500).json({ message: 'Server authentication is not configured.' });
+      return;
+    }
+
     res.status(401).json({ message: 'Token đã hết hạn hoặc bị sai, vui lòng đăng nhập lại' });
   }
 };
