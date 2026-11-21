@@ -48,7 +48,7 @@ function App() {
         {/* Recruiter application */}
         <Route path="/recruiter" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterDashboard /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobs /></MainLayout></RouteGuard>} />
-        <Route path="/recruiter/jobs/create" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobForm /></MainLayout></RouteGuard>} />
+        <Route path="/recruiter/jobs/create" element={<Navigate to="/recruiter/jobs" replace />} />
         <Route path="/recruiter/jobs/:jobId/candidates" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterCandidates /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs/:jobId/edit" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobForm /></MainLayout></RouteGuard>} />
         <Route path="/recruiter/jobs/:jobId" element={<RouteGuard roles={['RECRUITER']}><MainLayout><RecruiterJobDetail /></MainLayout></RouteGuard>} />
@@ -64,7 +64,7 @@ function App() {
         <Route path="/admin/settings" element={<RouteGuard roles={['ADMIN']}><MainLayout><PlaceholderPage title="Settings" description="System settings will be available here." /></MainLayout></RouteGuard>} />
 
         {/* Legacy links remain valid while callers move to the role-based paths. */}
-        <Route path="/job/create" element={<Navigate to="/recruiter/jobs/create" replace />} />
+        <Route path="/job/create" element={<Navigate to="/recruiter/jobs" replace />} />
         <Route path="/job/list" element={<Navigate to="/candidate/jobs" replace />} />
         <Route path="/dashboard/recruiter" element={<Navigate to="/recruiter" replace />} />
         <Route path="/dashboard/ranking/:jobId" element={<Navigate to="/recruiter/jobs" replace />} />
