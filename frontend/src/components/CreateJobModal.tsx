@@ -11,6 +11,7 @@ import {
   FileText,
   ClipboardList,
   X,
+  Save,
 } from 'lucide-react';
 import api from '../api/axios';
 import { getErrorMessage } from '../utils/formatters';
@@ -24,6 +25,7 @@ interface FormData {
   description: string;
   requirements: string;
   benefits: string;
+  isActive: boolean;
 }
 
 const INITIAL_FORM: FormData = {
@@ -34,22 +36,48 @@ const INITIAL_FORM: FormData = {
   description: '',
   requirements: '',
   benefits: '',
+  isActive: true,
 };
+
+interface JobToEdit {
+  id: string;
+  title: string;
+  company?: { name?: string };
+  location: string;
+  salaryRange?: string | null;
+  description: string;
+  requirements: string;
+  benefits?: string | null;
+  isActive: boolean;
+}
 
 interface CreateJobModalProps {
   open: boolean;
   onClose: () => void;
   onCreated?: () => void;
+  job?: JobToEdit;
+  onUpdated?: () => void;
 }
 
-export default function CreateJobModal({ open, onClose, onCreated }: CreateJobModalProps) {
-  const [formData, setFormData] = useState<FormData>(INITIAL_FORM);
+export default function CreateJobModal({ open, onClose, onCreated, job, onUpdated }: CreateJobModalProps) {
+  const [formData, setFormData] = useState<FormData>(() => job ? {
+    title: job.title,
+    companyName: job.company?.name || '',
+    location: job.location,
+    salaryRange: job.salaryRange || '',
+    description: job.description,
+    requirements: job.requirements,
+    benefits: job.benefits || '',
+    isActive: job.isActive,
+  } : INITIAL_FORM);
+  const [originalSalaryRange] = useState(() => job?.salaryRange || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [salaryError, setSalaryError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const editing = Boolean(job);
   const closeModal = useCallback(() => {
     setSalaryError('');
     onClose();
@@ -79,10 +107,13 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const salaryValidationError = validateSalaryRange(formData.salaryRange);
-    if (salaryValidationError) {
-      setSalaryError(salaryValidationError);
-      return;
+    const salaryChanged = !job || formData.salaryRange !== originalSalaryRange;
+    if (salaryChanged) {
+      const salaryValidationError = validateSalaryRange(formData.salaryRange);
+      if (salaryValidationError) {
+        setSalaryError(salaryValidationError);
+        return;
+      }
     }
 
     setSalaryError('');
@@ -91,9 +122,22 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
     setIsSuccess(false);
 
     try {
-      await api.post('/job/create', formData);
-      setFormData(INITIAL_FORM);
-      onCreated?.();
+      if (job) {
+        await api.put(`/job/manage/${job.id}`, {
+          title: formData.title,
+          description: formData.description,
+          requirements: formData.requirements,
+          benefits: formData.benefits,
+          ...(salaryChanged ? { salaryRange: formData.salaryRange } : {}),
+          location: formData.location,
+          isActive: formData.isActive,
+        });
+        onUpdated?.();
+      } else {
+        await api.post('/job/create', formData);
+        setFormData(INITIAL_FORM);
+        onCreated?.();
+      }
       closeModal();
     } catch (error) {
       setIsSuccess(false);
@@ -128,10 +172,10 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
                 Recruitment
               </div>
               <h2 id="create-job-title" className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Post a new job
+                {editing ? 'Edit job' : 'Post a new job'}
               </h2>
               <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                Add the role details candidates need before they apply.
+                {editing ? 'Update the role details and publication status.' : 'Add the role details candidates need before they apply.'}
               </p>
             </div>
             <button
@@ -195,8 +239,9 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
                     value={formData.companyName}
                     onChange={handleChange}
                     required
+                    disabled={editing}
                     placeholder="e.g. FPT Software"
-                    className={`w-full rounded border px-3 py-2.5 text-sm outline-none placeholder:text-slate-500 transition ${
+                    className={`w-full rounded border px-3 py-2.5 text-sm outline-none placeholder:text-slate-500 transition disabled:cursor-not-allowed disabled:opacity-60 ${
                       isDark
                         ? 'border-navy-700 bg-navy-900 text-slate-100 focus:border-brand'
                         : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-brand'
@@ -224,29 +269,44 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
                 </div>
               </div>
 
-              <div>
-                <label className={`mb-1.5 flex items-center gap-1.5 text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                  <DollarSign className={`h-3.5 w-3.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
-                  Salary range
-                </label>
-                <input
-                  type="text"
-                  name="salaryRange"
-                  value={formData.salaryRange}
-                  onChange={handleChange}
-                  maxLength={MAX_SALARY_RANGE_LENGTH}
-                  aria-invalid={Boolean(salaryError)}
-                  aria-describedby="create-job-salary-help"
-                  placeholder="e.g. 15M - 25M or Negotiable"
-                  className={`w-full rounded border px-3 py-2.5 text-sm outline-none placeholder:text-slate-500 transition ${
-                    isDark
-                      ? 'border-navy-700 bg-navy-900 text-slate-100 focus:border-brand'
-                      : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-brand'
-                  }`}
-                />
-                <p id="create-job-salary-help" className={`mt-1.5 text-xs ${salaryError ? 'text-rose-500' : isDark ? 'text-slate-500' : 'text-slate-500'}`} role={salaryError ? 'alert' : undefined}>
-                  {salaryError || 'Use “15M - 25M” with minimum first, or “Negotiable” (up to 100 characters).'}
-                </p>
+              <div className={editing ? 'grid grid-cols-1 gap-4 sm:grid-cols-2' : ''}>
+                <div>
+                  <label className={`mb-1.5 flex items-center gap-1.5 text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                    <DollarSign className={`h-3.5 w-3.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+                    Salary range
+                  </label>
+                  <input
+                    type="text"
+                    name="salaryRange"
+                    value={formData.salaryRange}
+                    onChange={handleChange}
+                    maxLength={MAX_SALARY_RANGE_LENGTH}
+                    aria-invalid={Boolean(salaryError)}
+                    aria-describedby="create-job-salary-help"
+                    placeholder="e.g. 15M - 25M or Negotiable"
+                    className={`w-full rounded border px-3 py-2.5 text-sm outline-none placeholder:text-slate-500 transition ${
+                      isDark
+                        ? 'border-navy-700 bg-navy-900 text-slate-100 focus:border-brand'
+                        : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-brand'
+                    }`}
+                  />
+                  <p id="create-job-salary-help" className={`mt-1.5 text-xs ${salaryError ? 'text-rose-500' : isDark ? 'text-slate-500' : 'text-slate-500'}`} role={salaryError ? 'alert' : undefined}>
+                    {salaryError || 'Use “15M - 25M” with minimum first, or “Negotiable” (up to 100 characters).'}
+                  </p>
+                </div>
+
+                {editing && (
+                  <label className={`flex items-center gap-2 self-end pb-2.5 text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={formData.isActive}
+                      onChange={(event) => setFormData((prev) => ({ ...prev, isActive: event.target.checked }))}
+                      className="h-4 w-4 rounded border-navy-700 text-brand focus:ring-brand"
+                    />
+                    Active job
+                  </label>
+                )}
               </div>
 
               <div>
@@ -332,12 +392,12 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
                 {loading ? (
                   <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Posting...
+                    {editing ? 'Saving...' : 'Posting...'}
                   </>
                 ) : (
                   <>
-                    <PlusCircle className="h-4 w-4" />
-                    Post job
+                    {editing ? <Save className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />}
+                    {editing ? 'Save changes' : 'Post job'}
                   </>
                 )}
               </button>

@@ -45,6 +45,9 @@ export default function RecruiterCandidateDetail() {
   const first = applications[0];
   const candidate = first.candidateProfile;
   const user = candidate.user;
+  const storedResume = candidate.resumeUrl?.trim() || '';
+  const resumeUrl = /^https?:\/\//i.test(storedResume) ? storedResume : '';
+  const resumeFileName = candidate.resumeFileName || (storedResume && !resumeUrl ? storedResume : '');
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -82,19 +85,29 @@ export default function RecruiterCandidateDetail() {
           <h3 className={`mt-5 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Education</h3>
           <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{candidate.education?.summary || [candidate.education?.school, candidate.education?.major].filter(Boolean).join(' - ') || 'No education information.'}</p>
 
-          {candidate.resumeFileName ? (
+          {resumeUrl && (
+            <>
+              <h3 className={`mt-5 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Resume URL</h3>
+              <a
+                href={resumeUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 block break-all text-sm text-brand hover:underline"
+              >
+                {resumeUrl}
+              </a>
+            </>
+          )}
+
+          {resumeFileName && (
             <div className="mt-5 flex flex-wrap gap-2">
-              <button type="button" onClick={() => void handleResumeAction(false, candidate.resumeFileName || 'resume')} className={`inline-flex items-center gap-2 rounded border px-4 py-2 text-xs font-semibold transition hover:opacity-80 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}>
+              <button type="button" onClick={() => void handleResumeAction(false, resumeFileName)} className={`inline-flex items-center gap-2 rounded border px-4 py-2 text-xs font-semibold transition hover:opacity-80 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}>
                 <FileText className="h-4 w-4" />View resume <ExternalLink className="h-3 w-3 opacity-60" />
               </button>
-              <button type="button" onClick={() => void handleResumeAction(true, candidate.resumeFileName || 'resume')} className={`inline-flex items-center gap-2 rounded border px-4 py-2 text-xs font-semibold transition hover:opacity-80 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}>
+              <button type="button" onClick={() => void handleResumeAction(true, resumeFileName)} className={`inline-flex items-center gap-2 rounded border px-4 py-2 text-xs font-semibold transition hover:opacity-80 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}>
                 <Download className="h-4 w-4" />Download resume
               </button>
             </div>
-          ) : candidate.resumeUrl && (
-            <a href={candidate.resumeUrl} target="_blank" rel="noreferrer" className={`mt-5 inline-flex items-center gap-2 rounded border px-4 py-2 text-xs font-semibold transition hover:opacity-80 ${isDark ? 'border-navy-700 bg-navy-800 text-slate-300 hover:border-navy-600 hover:text-slate-100' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}>
-              <FileText className="h-4 w-4" /> View resume <ExternalLink className="h-3 w-3 opacity-60" />
-            </a>
           )}
           {resumeError && <p role="alert" className="mt-2 text-xs text-rose-500">{resumeError}</p>}
         </section>

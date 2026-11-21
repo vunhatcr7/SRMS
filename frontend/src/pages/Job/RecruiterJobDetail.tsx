@@ -4,16 +4,18 @@ import { AlertCircle, ArrowLeft, Building2, Edit3, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import CreateJobModal from '../../components/CreateJobModal';
 import { getErrorMessage } from '../../utils/formatters';
 
 interface Job { id: string; title: string; description: string; requirements: string; benefits?: string | null; location: string; salaryRange?: string | null; isActive: boolean; createdAt: string; company?: { name: string }; _count?: { applications: number } }
 
-export default function RecruiterJobDetail() {
+export default function RecruiterJobDetail({ autoOpenEdit = false }: { autoOpenEdit?: boolean }) {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [editOpen, setEditOpen] = useState(autoOpenEdit);
   const { theme } = useTheme();
 
   const isDark = theme === 'dark';
@@ -72,7 +74,7 @@ export default function RecruiterJobDetail() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={() => navigate(`/recruiter/jobs/${job.id}/edit`)} className="inline-flex items-center gap-2 rounded bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark">
+        <button type="button" onClick={() => setEditOpen(true)} className="inline-flex items-center gap-2 rounded bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark">
           <Edit3 className="h-4 w-4" /> Edit job
         </button>
         <button type="button" onClick={() => void toggle()} className={`rounded border px-4 py-2.5 text-sm font-semibold transition ${
@@ -98,6 +100,24 @@ export default function RecruiterJobDetail() {
           <p className={`mt-3 text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{job.benefits}</p>
         </section>}
       </div>
+
+      {editOpen && (
+        <CreateJobModal
+          key={job.id}
+          open
+          onClose={() => setEditOpen(false)}
+          job={job}
+          onUpdated={() => {
+            if (!jobId) return;
+            api.get(`/job/manage/${jobId}`)
+              .then((response) => {
+                setJob(response.data);
+                setMessage('');
+              })
+              .catch((error) => setMessage(getErrorMessage(error)));
+          }}
+        />
+      )}
     </div>
   );
 }
