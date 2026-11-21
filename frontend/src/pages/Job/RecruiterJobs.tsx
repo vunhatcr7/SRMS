@@ -11,7 +11,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import Skeleton from '../../components/ui/Skeleton';
 import { useMinimumLoading } from '../../hooks/useMinimumLoading';
 
-interface Job { id: string; title: string; location: string; salaryRange?: string | null; benefits?: string | null; isActive: boolean; createdAt: string; company?: { name: string }; _count?: { applications: number } }
+interface Job { id: string; title: string; description: string; requirements: string; location: string; salaryRange?: string | null; benefits?: string | null; isActive: boolean; createdAt: string; company?: { name: string }; _count?: { applications: number } }
 
 export default function RecruiterJobs() {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ export default function RecruiterJobs() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
   const [createJobOpen, setCreateJobOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
 
   const isLoading = useMinimumLoading(dataLoaded, 1000);
 
@@ -159,7 +160,7 @@ export default function RecruiterJobs() {
                 <button type="button" onClick={() => navigate(`/recruiter/jobs/${job.id}`)} className="rounded-md border border-slate-300 p-1.5 text-slate-500 transition hover:text-slate-700 dark:border-navy-700 dark:text-slate-400 dark:hover:text-slate-200" title="View">
                   <Eye className="h-3.5 w-3.5" />
                 </button>
-                <button type="button" onClick={() => navigate(`/recruiter/jobs/${job.id}/edit`)} className="rounded-md border border-slate-300 p-1.5 text-slate-500 transition hover:text-slate-700 dark:border-navy-700 dark:text-slate-400 dark:hover:text-slate-200" title="Edit">
+                <button type="button" onClick={() => setEditingJob(job)} className="rounded-md border border-slate-300 p-1.5 text-slate-500 transition hover:text-slate-700 dark:border-navy-700 dark:text-slate-400 dark:hover:text-slate-200" title="Edit">
                   <Edit3 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -173,6 +174,15 @@ export default function RecruiterJobs() {
         onClose={() => setCreateJobOpen(false)}
         onCreated={refreshJobs}
       />
+      {editingJob && (
+        <CreateJobModal
+          key={editingJob.id}
+          open
+          onClose={() => setEditingJob(null)}
+          job={editingJob}
+          onUpdated={refreshJobs}
+        />
+      )}
     </div>
   );
 }
