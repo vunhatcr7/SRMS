@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BriefcaseBusiness, Building2, Edit3, Eye, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../api/axios';
 import { formatDate } from '../../utils/formatters';
+import CreateJobModal from '../../components/CreateJobModal';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import EmptyState from '../../components/ui/EmptyState';
@@ -19,14 +20,41 @@ export default function RecruiterJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
+  const [createJobOpen, setCreateJobOpen] = useState(false);
 
   const isLoading = useMinimumLoading(dataLoaded, 1000);
 
+  const fetchJobs = useCallback(async () => {
+    const response = await api.get('/job/manage');
+    return Array.isArray(response.data) ? response.data : [];
+  }, []);
+
   useEffect(() => {
     let active = true;
-    api.get('/job/manage').then((response) => { if (active) setJobs(Array.isArray(response.data) ? response.data : []); }).catch(() => { if (active) setError('Unable to load jobs.'); }).finally(() => { if (active) setDataLoaded(true); });
+    fetchJobs()
+      .then((loadedJobs) => {
+        if (active) {
+          setError('');
+          setJobs(loadedJobs);
+        }
+      })
+      .catch(() => {
+        if (active) setError('Unable to load jobs.');
+      })
+      .finally(() => {
+        if (active) setDataLoaded(true);
+      });
     return () => { active = false; };
-  }, []);
+  }, [fetchJobs]);
+
+  const refreshJobs = () => {
+    void fetchJobs()
+      .then((loadedJobs) => {
+        setError('');
+        setJobs(loadedJobs);
+      })
+      .catch(() => setError('Unable to load jobs.'));
+  };
 
   if (isLoading) {
     return (
@@ -78,7 +106,7 @@ export default function RecruiterJobs() {
           <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">My jobs</h1>
           <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Manage the roles owned by your recruiter account.</p>
         </div>
-        <button type="button" onClick={() => navigate('/recruiter/jobs/create')} className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark">
+        <button type="button" onClick={() => setCreateJobOpen(true)} className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark">
           Create job
         </button>
       </div>
@@ -92,7 +120,7 @@ export default function RecruiterJobs() {
             title="No jobs yet"
             description="Create your first role to start recruiting."
             action={
-              <button type="button" onClick={() => navigate('/recruiter/jobs/create')} className="mt-4 rounded-md bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark">
+              <button type="button" onClick={() => setCreateJobOpen(true)} className="mt-4 rounded-md bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-dark">
                 Create job
               </button>
             }
@@ -139,6 +167,12 @@ export default function RecruiterJobs() {
           </Card>
         ))}
       </div>
+
+      <CreateJobModal
+        open={createJobOpen}
+        onClose={() => setCreateJobOpen(false)}
+        onCreated={refreshJobs}
+      />
     </div>
   );
 }
