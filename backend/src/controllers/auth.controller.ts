@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 import prisma from '../config/db';
+import { getJwtSecret } from '../utils/jwt-secret';
 
 const selfRegisterRoles = ['CANDIDATE', 'RECRUITER'] as const;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -106,10 +107,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const secretKey = process.env.JWT_SECRET || 'srms_platform_secret_fallback_key';
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      secretKey,
+      getJwtSecret(),
       { expiresIn: '1d' }
     );
 

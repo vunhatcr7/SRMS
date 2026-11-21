@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import {
   PlusCircle,
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import { getErrorMessage } from '../utils/formatters';
+import { MAX_SALARY_RANGE_LENGTH, validateSalaryRange } from '../utils/salaryRange';
 
 interface FormData {
   title: string;
@@ -45,15 +46,20 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [salaryError, setSalaryError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const closeModal = useCallback(() => {
+    setSalaryError('');
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') closeModal();
     };
     document.addEventListener('keydown', onKeyDown);
     document.body.style.overflow = 'hidden';
@@ -62,16 +68,24 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [open, closeModal]);
 
   if (!open) return null;
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    if (e.target.name === 'salaryRange') setSalaryError('');
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const salaryValidationError = validateSalaryRange(formData.salaryRange);
+    if (salaryValidationError) {
+      setSalaryError(salaryValidationError);
+      return;
+    }
+
+    setSalaryError('');
     setLoading(true);
     setMessage('');
     setIsSuccess(false);
@@ -80,7 +94,7 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
       await api.post('/job/create', formData);
       setFormData(INITIAL_FORM);
       onCreated?.();
-      onClose();
+      closeModal();
     } catch (error) {
       setIsSuccess(false);
       setMessage(getErrorMessage(error));
@@ -95,7 +109,7 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
         type="button"
         aria-label="Close form"
         className={`fixed inset-0 ${isDark ? 'bg-navy-950/80' : 'bg-slate-900/40'} backdrop-blur-[1px]`}
-        onClick={onClose}
+        onClick={closeModal}
       />
 
       <div className="relative z-10 flex min-h-full items-center justify-center p-4">
@@ -122,7 +136,7 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={closeModal}
               aria-label="Close"
               className={`rounded border p-2 transition ${isDark ? 'border-navy-700 bg-navy-800 text-slate-400 hover:text-slate-200' : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
             >
@@ -220,6 +234,9 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
                   name="salaryRange"
                   value={formData.salaryRange}
                   onChange={handleChange}
+                  maxLength={MAX_SALARY_RANGE_LENGTH}
+                  aria-invalid={Boolean(salaryError)}
+                  aria-describedby="create-job-salary-help"
                   placeholder="e.g. 15M - 25M or Negotiable"
                   className={`w-full rounded border px-3 py-2.5 text-sm outline-none placeholder:text-slate-500 transition ${
                     isDark
@@ -227,6 +244,9 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
                       : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-brand'
                   }`}
                 />
+                <p id="create-job-salary-help" className={`mt-1.5 text-xs ${salaryError ? 'text-rose-500' : isDark ? 'text-slate-500' : 'text-slate-500'}`} role={salaryError ? 'alert' : undefined}>
+                  {salaryError || 'Use “15M - 25M” with minimum first, or “Negotiable” (up to 100 characters).'}
+                </p>
               </div>
 
               <div>
@@ -295,7 +315,7 @@ export default function CreateJobModal({ open, onClose, onCreated }: CreateJobMo
             <div className={`flex gap-3 border-t px-5 py-3 ${isDark ? 'border-navy-700 bg-navy-900' : 'border-slate-200 bg-slate-50'}`}>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={closeModal}
                 className={`rounded border px-4 py-2.5 text-sm font-semibold transition ${
                   isDark
                     ? 'border-navy-700 bg-navy-800 text-slate-300 hover:bg-navy-750'
