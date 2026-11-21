@@ -38,6 +38,8 @@ const router = Router();
  *                 example: "Node.js, Express, Prisma, PostgreSQL"
  *               salaryRange:
  *                 type: string
+ *                 maxLength: 100
+ *                 description: Use "15M - 25M" with minimum first and the same optional K, M, or B unit, or use "Negotiable".
  *                 example: "8M - 12M"
  *               benefits:
  *                 type: string

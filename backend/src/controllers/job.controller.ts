@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/db';
+import { parseSalaryRangeUpdate, validateSalaryRange } from '../utils/salary-range';
 
 const getJobId = (req: Request): string => Array.isArray(req.params.jobId) ? req.params.jobId[0].trim() : req.params.jobId?.trim() || '';
 const canManageJob = (requesterId: string, requesterRole: string, recruiterId: string) => requesterRole === 'ADMIN' || requesterId === recruiterId;
@@ -11,7 +12,18 @@ export const createJob = async (req: Request, res: Response): Promise<void> => {
     const title = typeof body.title === 'string' ? body.title.trim() : '';
     const description = typeof body.description === 'string' ? body.description.trim() : '';
     const requirements = typeof body.requirements === 'string' ? body.requirements.trim() : '';
-    const salaryRange = typeof body.salaryRange === 'string' ? body.salaryRange.trim() : undefined;
+    const rawSalaryRange = body.salaryRange;
+    if (rawSalaryRange !== undefined && rawSalaryRange !== null && typeof rawSalaryRange !== 'string') {
+      res.status(400).json({ message: 'Salary range must be text.' });
+      return;
+    }
+    const salaryRangeInput = typeof rawSalaryRange === 'string' ? rawSalaryRange : '';
+    const salaryRangeError = validateSalaryRange(salaryRangeInput);
+    if (salaryRangeError) {
+      res.status(400).json({ message: salaryRangeError });
+      return;
+    }
+    const salaryRange = salaryRangeInput.trim() || undefined;
     const location = typeof body.location === 'string' ? body.location.trim() : '';
     const companyName = typeof body.companyName === 'string' ? body.companyName.trim() : '';
     const rawBenefits = body.benefits;
@@ -128,7 +140,11 @@ export const updateManagedJob = async (req: Request, res: Response): Promise<voi
     const description = typeof body.description === 'string' ? body.description.trim() : '';
     const requirements = typeof body.requirements === 'string' ? body.requirements.trim() : '';
     const location = typeof body.location === 'string' ? body.location.trim() : '';
-    const salaryRange = typeof body.salaryRange === 'string' ? body.salaryRange.trim() : null;
+    const salaryRangeUpdate = parseSalaryRangeUpdate(body);
+    if ('error' in salaryRangeUpdate) {
+      res.status(400).json({ message: salaryRangeUpdate.error });
+      return;
+    }
     const rawBenefits = body.benefits;
     if (rawBenefits !== undefined && rawBenefits !== null && typeof rawBenefits !== 'string') {
       res.status(400).json({ message: 'Quyền lợi phải là chuỗi văn bản.' });
@@ -153,7 +169,7 @@ export const updateManagedJob = async (req: Request, res: Response): Promise<voi
       res.status(400).json({ message: 'Nội dung quyền lợi vượt quá độ dài cho phép.' });
       return;
     }
-    const updatedJob = await prisma.job.update({ where: { id: jobId }, data: { title, description, requirements, location, salaryRange, ...(benefits === undefined ? {} : { benefits }), ...(isActive === undefined ? {} : { isActive }) }, include: { company: true, _count: { select: { applications: true } } } });
+    const updatedJob = await prisma.job.update({ where: { id: jobId }, data: { title, description, requirements, location, ...(salaryRangeUpdate.present ? { salaryRange: salaryRangeUpdate.value } : {}), ...(benefits === undefined ? {} : { benefits }), ...(isActive === undefined ? {} : { isActive }) }, include: { company: true, _count: { select: { applications: true } } } });
     res.status(200).json({ message: 'Cập nhật công việc thành công.', job: updatedJob });
   } catch (error: unknown) {
     const err = error as Error;

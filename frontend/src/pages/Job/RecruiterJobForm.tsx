@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { getErrorMessage } from '../../utils/formatters';
+import { MAX_SALARY_RANGE_LENGTH, validateSalaryRange } from '../../utils/salaryRange';
 
 interface FormState { title: string; companyName: string; description: string; requirements: string; benefits: string; salaryRange: string; location: string; isActive: boolean }
 const initialForm: FormState = { title: '', companyName: '', description: '', requirements: '', benefits: '', salaryRange: '', location: '', isActive: true };
@@ -14,26 +15,55 @@ export default function RecruiterJobForm() {
   const navigate = useNavigate();
   const editing = Boolean(jobId);
   const [form, setForm] = useState<FormState>(initialForm);
+  const [originalSalaryRange, setOriginalSalaryRange] = useState('');
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [salaryError, setSalaryError] = useState('');
   const { theme } = useTheme();
 
   const isDark = theme === 'dark';
 
   useEffect(() => {
     if (!jobId) return;
-    api.get(`/job/manage/${jobId}`).then((response) => { const job = response.data; setForm({ title: job.title || '', companyName: job.company?.name || '', description: job.description || '', requirements: job.requirements || '', benefits: job.benefits || '', salaryRange: job.salaryRange || '', location: job.location || '', isActive: job.isActive }); }).catch((error) => setMessage(getErrorMessage(error))).finally(() => setLoading(false));
+    api.get(`/job/manage/${jobId}`).then((response) => {
+      const job = response.data;
+      const salaryRange = typeof job.salaryRange === 'string' ? job.salaryRange : '';
+      setOriginalSalaryRange(salaryRange);
+      setForm({ title: job.title || '', companyName: job.company?.name || '', description: job.description || '', requirements: job.requirements || '', benefits: job.benefits || '', salaryRange, location: job.location || '', isActive: job.isActive });
+    }).catch((error) => setMessage(getErrorMessage(error))).finally(() => setLoading(false));
   }, [jobId]);
 
-  const update = (field: keyof FormState, value: string | boolean) => setForm((current) => ({ ...current, [field]: value }));
+  const update = (field: keyof FormState, value: string | boolean) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    if (field === 'salaryRange') setSalaryError('');
+  };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    const salaryChanged = !editing || form.salaryRange !== originalSalaryRange;
+    if (salaryChanged) {
+      const salaryValidationError = validateSalaryRange(form.salaryRange);
+      if (salaryValidationError) {
+        setSalaryError(salaryValidationError);
+        return;
+      }
+    }
+
+    setSalaryError('');
     setSaving(true);
     setMessage('');
     try {
       if (editing) {
-        await api.put(`/job/manage/${jobId}`, { title: form.title, description: form.description, requirements: form.requirements, benefits: form.benefits, salaryRange: form.salaryRange, location: form.location, isActive: form.isActive });
+        const payload = {
+          title: form.title,
+          description: form.description,
+          requirements: form.requirements,
+          benefits: form.benefits,
+          location: form.location,
+          isActive: form.isActive,
+          ...(salaryChanged ? { salaryRange: form.salaryRange } : {}),
+        };
+        await api.put(`/job/manage/${jobId}`, payload);
         navigate(`/recruiter/jobs/${jobId}`);
       } else {
         const response = await api.post('/job/create', form);
@@ -79,7 +109,10 @@ export default function RecruiterJobForm() {
             </label>
             <label className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
               Salary range
-              <input value={form.salaryRange} onChange={(event) => update('salaryRange', event.target.value)} className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
+              <input value={form.salaryRange} maxLength={MAX_SALARY_RANGE_LENGTH} aria-invalid={Boolean(salaryError)} aria-describedby="edit-job-salary-help" onChange={(event) => update('salaryRange', event.target.value)} className={`mt-1 w-full rounded border bg-transparent px-3 py-2.5 text-sm outline-none transition ${isDark ? 'border-navy-700 text-slate-100 focus:border-brand' : 'border-slate-200 text-slate-900 focus:border-brand'}`} />
+              <span id="edit-job-salary-help" className={`mt-1.5 block text-xs ${salaryError ? 'text-rose-500' : isDark ? 'text-slate-500' : 'text-slate-500'}`} role={salaryError ? 'alert' : undefined}>
+                {salaryError || 'Use “15M - 25M” with minimum first, or “Negotiable” (up to 100 characters).'}
+              </span>
             </label>
             <label className={`flex items-center gap-2 self-end pb-2.5 text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
               <input type="checkbox" checked={form.isActive} onChange={(event) => update('isActive', event.target.checked)} className="h-4 w-4 rounded border-navy-700 bg-navy-800 text-brand focus:ring-brand" />

@@ -32,7 +32,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.ts"
+    "test": "npm run build && node --test tests/salary-range-and-auth.test.cjs",
+    "start": "node dist/server.js"
   },
   "prisma": {
     "seed": "ts-node --transpile-only prisma/seed.ts"
