@@ -11,7 +11,7 @@ const router = Router();
  *     tags:
  *       - Dashboard
  *     summary: Get dashboard summary by current user role
- *     description: CANDIDATE sees own application metrics. RECRUITER sees owned job/application metrics. ADMIN and MANAGER see overall metrics.
+ *     description: CANDIDATE sees own application metrics. RECRUITER sees owned job/application metrics. ADMIN sees overall metrics.
  *     security:
  *       - BearerAuth: []
  *     responses:

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import prisma from '../config/db';
 
 const VALID_INTERVIEW_STATUSES = ['SCHEDULED', 'COMPLETED', 'CANCELLED'];
@@ -14,6 +15,17 @@ const MAX_NOTES_LENGTH = 5000;
 
 const ISO_SCHEDULE_PATTERN = /^(\d{4}-\d{2}-\d{2})(?:[T ](?:[01]\d|2[0-3]):\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/i;
 const MEETING_URL_PATTERN = /^https?:\/\/[^/\s?#\\]+[^\s\\]*$/i;
+const SCHEDULED_CONFLICT_MESSAGE = 'This application already has an active interview scheduled for this time.';
+
+const isScheduledConflict = (error: unknown): boolean => {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+    return false;
+  }
+
+  const target = error.meta?.target;
+  return target === 'Interview_scheduled_slot_key'
+    || (Array.isArray(target) && target.length === 2 && target.includes('applicationId') && target.includes('scheduledAt'));
+};
 
 const parseScheduledAt = (value: unknown): Date | null => {
   if (typeof value !== 'string') {
@@ -156,7 +168,7 @@ export const createInterview = async (req: Request, res: Response): Promise<void
 
     const scheduledConflict = await findScheduledConflict(safeApplicationId, scheduledDate);
     if (scheduledConflict) {
-      res.status(409).json({ message: 'Don ung tuyen da co lich phong van dang dien ra vao thoi diem nay.' });
+      res.status(409).json({ message: SCHEDULED_CONFLICT_MESSAGE });
       return;
     }
 
@@ -174,6 +186,10 @@ export const createInterview = async (req: Request, res: Response): Promise<void
 
     res.status(201).json({ message: 'Tao lich phong van thanh cong.', interview });
   } catch (error: unknown) {
+    if (isScheduledConflict(error)) {
+      res.status(409).json({ message: SCHEDULED_CONFLICT_MESSAGE });
+      return;
+    }
     const err = error as Error;
     res.status(500).json({ message: 'Loi server khi tao lich phong van.', error: err.message });
   }
@@ -483,7 +499,7 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
         interviewId,
       )
     ) {
-      res.status(409).json({ message: 'Don ung tuyen da co lich phong van dang dien ra vao thoi diem nay.' });
+      res.status(409).json({ message: SCHEDULED_CONFLICT_MESSAGE });
       return;
     }
 
@@ -501,6 +517,10 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
 
     res.status(200).json({ message: 'Cap nhat lich phong van thanh cong.', interview: updatedInterview });
   } catch (error: unknown) {
+    if (isScheduledConflict(error)) {
+      res.status(409).json({ message: SCHEDULED_CONFLICT_MESSAGE });
+      return;
+    }
     const err = error as Error;
     res.status(500).json({ message: 'Loi server khi cap nhat lich phong van.', error: err.message });
   }

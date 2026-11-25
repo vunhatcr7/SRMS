@@ -8,6 +8,7 @@ import { MAX_RESUME_FILE_SIZE } from '../services/resume-storage.service';
 const router = Router();
 const upload = multer({
 	storage: multer.memoryStorage(),
+	defParamCharset: 'utf8',
 	limits: { fileSize: MAX_RESUME_FILE_SIZE },
 	fileFilter: (_req, file, callback) => {
 		const extension = path.extname(file.originalname).toLowerCase();
@@ -85,16 +86,20 @@ router.get('/profile', requireAuth, rolesAllowed('CANDIDATE'), getMyCandidatePro
  *                 example: ["React", "TypeScript", "Node.js"]
  *               experience:
  *                 type: object
+ *                 nullable: true
  *                 example:
  *                   years: 2
  *                   position: "Frontend Developer"
  *               education:
  *                 type: object
+ *                 nullable: true
  *                 example:
  *                   school: "Demo University"
  *                   major: "Software Engineering"
  *               resumeUrl:
  *                 type: string
+ *                 nullable: true
+ *                 description: Omit to retain the existing link. Send null or a blank string to clear it.
  *                 example: "https://example.com/resume.pdf"
  *     responses:
  *       200:
@@ -185,7 +190,7 @@ router.get('/resume/file', requireAuth, rolesAllowed('CANDIDATE'), getMyResume);
  *     tags:
  *       - Candidate
  *     summary: View or download a candidate CV
- *     description: Recruiters can access CVs only for candidates who applied to jobs they own. ADMIN and MANAGER can access all candidate CVs.
+ *     description: Recruiters can access CVs only for candidates who applied to jobs they own. ADMIN can access all candidate CVs.
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -219,7 +224,7 @@ router.get('/resume/:userId/file', requireAuth, rolesAllowed('RECRUITER', 'MANAG
  *     tags:
  *       - Candidate
  *     summary: Get candidate profile by user id
- *     description: The owner can view their own profile. ADMIN, MANAGER, and RECRUITER can view candidate profiles.
+ *     description: Candidates can view their own profile. ADMIN can view all profiles. RECRUITER can view profiles of applicants to owned jobs.
  *     security:
  *       - BearerAuth: []
  *     parameters:

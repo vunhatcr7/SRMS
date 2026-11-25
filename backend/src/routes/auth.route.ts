@@ -76,6 +76,8 @@ router.post('/register', register);
  *         description: Login successful. Copy token and use Authorize with Bearer TOKEN.
  *       400:
  *         description: Invalid email or password
+ *       403:
+ *         description: The authenticated account role is unavailable in SRMS
  *       500:
  *         description: Server error
  */
