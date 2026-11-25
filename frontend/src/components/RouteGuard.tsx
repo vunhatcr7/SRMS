@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-
-type AppRole = 'ADMIN' | 'RECRUITER' | 'CANDIDATE';
+import { isAppRole, roleWorkspaces, type AppRole } from '../utils/appRoles';
 
 interface RouteGuardProps {
   children: ReactNode;
@@ -9,7 +8,7 @@ interface RouteGuardProps {
 }
 
 interface StoredUser {
-  role?: AppRole;
+  role?: unknown;
 }
 
 const getStoredUser = (): StoredUser | null => {
@@ -32,9 +31,12 @@ export default function RouteGuard({ children, roles }: RouteGuardProps) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
+  if (!isAppRole(user.role)) {
+    return <Navigate to="/login" replace state={{ unsupportedRole: true }} />;
+  }
+
   if (roles && !roles.includes(user.role)) {
-    const fallback = user.role === 'CANDIDATE' ? '/candidate' : user.role === 'ADMIN' ? '/admin' : '/recruiter';
-    return <Navigate to={fallback} replace />;
+    return <Navigate to={roleWorkspaces[user.role]} replace />;
   }
 
   return <>{children}</>;

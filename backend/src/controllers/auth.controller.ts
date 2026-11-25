@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 import prisma from '../config/db';
+import { isSupportedAppRole, unsupportedRoleError } from '../utils/app-roles';
 import { getJwtSecret } from '../utils/jwt-secret';
 
 const selfRegisterRoles = ['CANDIDATE', 'RECRUITER'] as const;
@@ -104,6 +105,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       res.status(400).json({ message: 'Tai khoan hoac mat khau khong chinh xac.' });
+      return;
+    }
+
+    if (!isSupportedAppRole(user.role)) {
+      res.status(403).json(unsupportedRoleError);
       return;
     }
 

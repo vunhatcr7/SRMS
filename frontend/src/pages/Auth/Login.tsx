@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 import api from '../../api/axios';
 import AuthLayout from '../../components/Layouts/AuthLayout';
+import { isAppRole, roleWorkspaces, unsupportedRoleMessage } from '../../utils/appRoles';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const location = useLocation();
+  const [message, setMessage] = useState<{ text: string; success: boolean } | null>(() =>
+    location.state?.unsupportedRole ? { text: unsupportedRoleMessage, success: false } : null
+  );
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
   const isDark = theme === 'dark';
@@ -17,21 +21,23 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
+    setMessage(null);
 
     try {
       const response = await api.post('/auth/login', { email, password });
       const { token, user: userData, message: resMessage } = response.data;
+      const role: unknown = userData?.role;
+      if (!isAppRole(role)) {
+        setMessage({ text: unsupportedRoleMessage, success: false });
+        return;
+      }
       localStorage.setItem('srms_token', token);
       localStorage.setItem('user', JSON.stringify(userData));
-      setMessage(resMessage);
-      setTimeout(() => {
-        const destination = userData.role === 'CANDIDATE' ? '/candidate' : userData.role === 'ADMIN' ? '/admin' : '/recruiter';
-        navigate(destination);
-      }, 400);
+      setMessage({ text: resMessage, success: true });
+      setTimeout(() => navigate(roleWorkspaces[role]), 400);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      setMessage(err.response?.data?.message || 'Login failed.');
+      setMessage({ text: err.response?.data?.message || 'Login failed.', success: false });
     } finally {
       setLoading(false);
     }
@@ -105,11 +111,11 @@ export default function Login() {
 
       {message && (
         <div className={`mt-4 rounded-md border px-3 py-2.5 text-center text-xs ${
-          message.toLowerCase().includes('success') || message.includes('thành công')
+          message.success
             ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400'
             : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-400'
         }`}>
-          {message}
+          {message.text}
         </div>
       )}
     </AuthLayout>

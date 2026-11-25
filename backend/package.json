@@ -33,6 +33,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "test": "npm run build && node --test",
+    "test:postgres": "npm run build && node --test tests/postgres/recruitment-flows.cjs",
     "start": "node dist/server.js"
   },
   "prisma": {

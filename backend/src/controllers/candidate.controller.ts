@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import path from 'path';
 import prisma from '../config/db';
 import { extractResumeText } from '../services/resume-parser.service';
@@ -30,7 +31,11 @@ const normalizeSkills = (value: unknown): string[] => {
   return [];
 };
 
-const isHttpUrl = (value: string): boolean => /^https?:\/\/\S+$/i.test(value);
+const isHttpUrl = (value: string): boolean => /^https?:\/\/[^/\s?#\\]+[^\s\\]*$/i.test(value) && URL.canParse(value);
+
+const nullableProfileJson = (value: Prisma.InputJsonValue | null | undefined) => (
+  value === null || (typeof value === 'string' && !value.trim()) ? Prisma.DbNull : value
+);
 
 export const getMyCandidateProfile = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -81,9 +86,9 @@ export const upsertMyCandidateProfile = async (req: Request, res: Response): Pro
       fullName?: string;
       phone?: string;
       skills?: unknown;
-      experience?: unknown;
-      education?: unknown;
-      resumeUrl?: string;
+      experience?: Prisma.InputJsonValue | null;
+      education?: Prisma.InputJsonValue | null;
+      resumeUrl?: unknown;
     };
 
     const normalizedFullName = typeof fullName === 'string' ? fullName.trim() : undefined;
@@ -105,13 +110,18 @@ export const upsertMyCandidateProfile = async (req: Request, res: Response): Pro
       return;
     }
 
-    if (resumeUrl !== undefined && (typeof resumeUrl !== 'string' || !isHttpUrl(resumeUrl.trim()))) {
-      res.status(400).json({ message: 'resumeUrl phai la mot URL http(s) hop le.' });
+    if (resumeUrl !== undefined && resumeUrl !== null && typeof resumeUrl !== 'string') {
+      res.status(400).json({ message: 'Resume URL must be a valid HTTP or HTTPS URL.' });
+      return;
+    }
+    const normalizedResumeUrl = typeof resumeUrl === 'string' ? resumeUrl.trim() || null : resumeUrl;
+    if (normalizedResumeUrl && !isHttpUrl(normalizedResumeUrl)) {
+      res.status(400).json({ message: 'Resume URL must be a valid HTTP or HTTPS URL.' });
       return;
     }
     const existingProfile = await prisma.candidateProfile.findUnique({ where: { userId } });
-    const safeExperience = experience === undefined || experience === null ? undefined : (experience as any);
-    const safeEducation = education === undefined || education === null ? undefined : (education as any);
+    const safeExperience = nullableProfileJson(experience);
+    const safeEducation = nullableProfileJson(education);
 
     const profile = await prisma.candidateProfile.upsert({
       where: { userId },
@@ -119,14 +129,14 @@ export const upsertMyCandidateProfile = async (req: Request, res: Response): Pro
         skills: skills === undefined ? undefined : normalizedSkills,
         experience: safeExperience,
         education: safeEducation,
-        resumeUrl: resumeUrl ?? undefined,
+        resumeUrl: normalizedResumeUrl,
       },
       create: {
         userId,
         skills: normalizedSkills,
         experience: safeExperience,
         education: safeEducation,
-        resumeUrl: resumeUrl ?? undefined,
+        resumeUrl: normalizedResumeUrl,
       },
       include: {
         user: {

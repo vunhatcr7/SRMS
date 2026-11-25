@@ -79,6 +79,10 @@ Candidate:   nguyenvana@gmail.com
 Interviewer: interviewer1@srms.com
 ```
 
+Manager and Interviewer are fixture roles. Sign-in for those roles returns
+`403 UNSUPPORTED_ROLE`. Use a Candidate, Recruiter or Administrator account
+for the demo.
+
 Luu y: `npx prisma db seed` se tao lai du lieu mau. Neu database co cascade delete, profile/job/application/interview cu co the bi mat.
 
 ## 4. Cach dung token
@@ -169,6 +173,10 @@ Authorization: Bearer CANDIDATE_TOKEN
 
 Neu chua tao profile ma goi GET, API tra ve `404`. Day khong phai loi login.
 
+Omit `resumeUrl`, `experience` or `education` in a profile update to keep its
+current value. Send `null` or a whitespace-only string to clear the field.
+Clearing the link leaves the uploaded CV and its metadata intact.
+
 ### Buoc 4: Login Recruiter
 
 ```http
@@ -235,10 +243,14 @@ Body:
 
 ```json
 {
-  "jobId": "JOB_ID",
-  "resumeUrl": "https://example.com/resume.pdf"
+  "jobId": "JOB_ID"
 }
 ```
+
+Manage the CV on the candidate profile before applying. Use
+`PUT /api/v1/candidate/profile` for a link or `POST /api/v1/candidate/resume`
+for a file. Supplying `resumeUrl` on the application returns
+`400 RESUME_PROFILE_ONLY`. Applying uses the candidate profile's current CV.
 
 Luu `application.id` thanh:
 

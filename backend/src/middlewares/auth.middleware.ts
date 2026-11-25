@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { isSupportedAppRole, unsupportedRoleError } from '../utils/app-roles';
 import { getJwtSecret, JwtSecretConfigurationError } from '../utils/jwt-secret';
 
 // 1. Bộ lọc kiểm tra Đăng nhập chung (Yêu cầu phải có Token hợp lệ)
@@ -15,7 +16,12 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
     const token = authHeader.split(' ')[1];
 
     // Giải mã mã khóa JWT
-    const decoded = jwt.verify(token, getJwtSecret()) as { id: string; email: string; role: any };
+    const decoded = jwt.verify(token, getJwtSecret()) as { id: string; email: string; role: unknown };
+
+    if (!isSupportedAppRole(decoded.role)) {
+      res.status(403).json(unsupportedRoleError);
+      return;
+    }
 
     // Đút thông tin người dùng vào req để các controller phía sau sử dụng
     req.user = {

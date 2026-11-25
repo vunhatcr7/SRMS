@@ -3,7 +3,6 @@ import { ProcessStage } from '@prisma/client';
 import prisma from '../config/db';
 
 const validStages = Object.values(ProcessStage);
-const isHttpUrl = (value: string): boolean => /^https?:\/\/\S+$/i.test(value);
 
 export const getMyApplicationForJob = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -43,7 +42,6 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
     const userId = (req as any).user?.id;
     const body = req.body ?? {};
     const jobId = typeof body.jobId === 'string' ? body.jobId.trim() : '';
-    const resumeUrl = typeof body.resumeUrl === 'string' ? body.resumeUrl.trim() : undefined;
 
     if (!userId) {
       res.status(401).json({ message: 'Vui long dang nhap bang tai khoan ung vien.' });
@@ -52,6 +50,14 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
 
     if (!jobId) {
       res.status(400).json({ message: 'Thieu jobId.' });
+      return;
+    }
+
+    if (body.resumeUrl !== undefined) {
+      res.status(400).json({
+        code: 'RESUME_PROFILE_ONLY',
+        message: 'Set or update your resume in your candidate profile and submit the application with jobId.',
+      });
       return;
     }
 
@@ -66,35 +72,15 @@ export const applyJob = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (resumeUrl && !isHttpUrl(resumeUrl)) {
-      res.status(400).json({ message: 'resumeUrl phai la mot URL http(s) hop le.' });
-      return;
-    }
-
-    let candidateProfile = await prisma.candidateProfile.findUnique({
+    // A simultaneous first application may create the profile before this request.
+    await prisma.candidateProfile.createMany({
+      data: { userId },
+      skipDuplicates: true,
+    });
+    const candidateProfile = await prisma.candidateProfile.findUniqueOrThrow({
       where: { userId },
+      select: { id: true },
     });
-
-    if (!candidateProfile) {
-      candidateProfile = await prisma.candidateProfile.create({
-        data: {
-          userId,
-          resumeUrl,
-        },
-      });
-    }
-
-    const alreadyApplied = await prisma.application.findFirst({
-      where: {
-        jobId,
-        candidateId: candidateProfile.id,
-      },
-    });
-
-    if (alreadyApplied) {
-      res.status(400).json({ code: 'ALREADY_APPLIED', message: 'Bạn đã nộp đơn ứng tuyển cho công việc này rồi.' });
-      return;
-    }
 
     let newApplication;
     try {

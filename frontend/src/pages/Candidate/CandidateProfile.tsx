@@ -51,6 +51,12 @@ const getStoredUser = (): ProfileUser => {
 };
 
 const formatFileSize = (size?: number) => size ? `${(size / 1024 / 1024).toFixed(2)} MB` : '';
+const getEducationSummary = (data?: EducationData | null) =>
+  data?.summary || `${data?.school || ''} ${data?.major || ''}`.trim();
+const getResumeLink = (value?: string | null) => {
+  const url = value?.trim() || '';
+  return /^https?:\/\//i.test(url) ? url : '';
+};
 
 export default function CandidateProfile() {
   const [profile, setProfile] = useState<CandidateProfileResponse | null>(null);
@@ -90,16 +96,17 @@ export default function CandidateProfile() {
     setExperienceYears(data.experience?.years ?? 0);
     setPosition(data.experience?.position ?? '');
     setExperienceSummary(data.experience?.summary ?? '');
-    setEducationSummary(data.education?.summary || `${data.education?.school || ''} ${data.education?.major || ''}`.trim());
+    setEducationSummary(getEducationSummary(data.education));
     const storedResume = data.resumeUrl || '';
-    setResumeUrl(storedResume.startsWith('http') ? storedResume : '');
+    const resumeLink = getResumeLink(storedResume);
+    setResumeUrl(resumeLink);
     if (data.resumeFileName) {
       setResumeFile({
         fileName: data.resumeFileName,
         mimeType: data.resumeMimeType || undefined,
         size: data.resumeFileSize || undefined,
       });
-    } else if (storedResume && !storedResume.startsWith('http')) {
+    } else if (storedResume && !resumeLink) {
       setResumeFile({ fileName: storedResume });
     } else {
       setResumeFile(null);
@@ -152,13 +159,22 @@ export default function CandidateProfile() {
     setMessage('');
     setIsSuccess(false);
     try {
+      const nextExperience = { years: Number(experienceYears) || 0, position: position.trim(), summary: experienceSummary.trim() };
+      const previousExperience = profile?.experience;
+      const experienceChanged = nextExperience.years !== (previousExperience?.years ?? 0)
+        || nextExperience.position !== (previousExperience?.position ?? '')
+        || nextExperience.summary !== (previousExperience?.summary ?? '');
+      const hasExperience = nextExperience.years || nextExperience.position || nextExperience.summary;
+      const nextEducation = educationSummary.trim();
+      const educationChanged = nextEducation !== getEducationSummary(profile?.education);
+      const nextResumeLink = resumeUrl.trim();
       const response = await api.put('/candidate/profile', {
         fullName: fullName.trim(),
         phone: phone.trim(),
         skills,
-        experience: { years: Number(experienceYears) || 0, position: position.trim(), summary: experienceSummary.trim() },
-        education: { summary: educationSummary.trim() },
-        resumeUrl: resumeUrl.trim() || undefined,
+        experience: experienceChanged ? (hasExperience ? { ...previousExperience, ...nextExperience } : null) : undefined,
+        education: educationChanged ? (nextEducation ? { ...profile?.education, summary: nextEducation } : null) : undefined,
+        resumeUrl: nextResumeLink !== getResumeLink(profile?.resumeUrl) ? nextResumeLink || null : undefined,
       });
       setIsSuccess(true);
       setMessage(response.data?.message || 'Profile saved.');

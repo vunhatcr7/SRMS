@@ -11,7 +11,7 @@ const router = Router();
  *     tags:
  *       - Application
  *     summary: Candidate applies to a job
- *     description: Only CANDIDATE can apply. A candidate can apply to each job only once.
+ *     description: Only CANDIDATE can apply once per job. Candidates manage their resume through their profile.
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -27,9 +27,6 @@ const router = Router();
  *                 type: string
  *                 description: Job id copied from GET /api/v1/job or POST /api/v1/job/create
  *                 example: "paste-job-id-here"
- *               resumeUrl:
- *                 type: string
- *                 example: "https://example.com/demo-cv.pdf"
  *               coverLetter:
  *                 type: string
  *                 example: "I have experience with React, TypeScript and REST APIs."
@@ -37,7 +34,7 @@ const router = Router();
  *       201:
  *         description: Application created successfully
  *       400:
- *         description: Missing jobId or candidate already applied
+ *         description: Missing jobId, closed job, duplicate application, or resumeUrl supplied on the application
  *       401:
  *         description: Missing or invalid token
  *       403:
@@ -60,7 +57,7 @@ router.get('/my/:applicationId', requireAuth, rolesAllowed('CANDIDATE'), getMyAp
  *     tags:
  *       - Application
  *     summary: Get applications for recruiter review
- *     description: RECRUITER sees applications for owned jobs. ADMIN and MANAGER can see all applications.
+ *     description: RECRUITER sees applications for owned jobs. ADMIN can see all applications.
  *     security:
  *       - BearerAuth: []
  *     responses:
@@ -83,7 +80,7 @@ router.get('/my/:applicationId', requireAuth, rolesAllowed('CANDIDATE'), getMyAp
  *       401:
  *         description: Missing or invalid token
  *       403:
- *         description: User is not RECRUITER, MANAGER, or ADMIN
+ *         description: This endpoint requires a RECRUITER or ADMIN account
  *       500:
  *         description: Server error
  */
@@ -98,7 +95,7 @@ router.get('/recruiter/:applicationId', requireAuth, rolesAllowed('RECRUITER', '
  *     tags:
  *       - Application
  *     summary: Update application stage
- *     description: RECRUITER can update owned applications. ADMIN and MANAGER can update any application.
+ *     description: RECRUITER can update owned applications. ADMIN can update any application.
  *     security:
  *       - BearerAuth: []
  *     requestBody:

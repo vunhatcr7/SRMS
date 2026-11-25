@@ -120,3 +120,36 @@ corrections, repeat the schema and history checks before baselining.
 
 The [Supabase alignment runbook](operations/SUPABASE_ALIGNMENT.md) covers the
 approved repair, backup verification and rollback for these two differences.
+
+## Scheduled interview uniqueness
+
+`20261125222000_enforce_scheduled_interview_uniqueness` creates a PostgreSQL
+partial unique index on `("applicationId", "scheduledAt")` for
+`SCHEDULED` interviews. Completed and cancelled rows remain history, including
+rows with the same time. Prisma 6.19.3 does not model this index in the
+datamodel. Verify its definition in `pg_indexes` alongside Prisma's schema diff.
+
+Before applying to a populated database, pause the local backend, verify a
+backup and count conflicts in a read-only session.
+
+```sql
+SELECT count(*) AS conflicting_slots
+FROM (
+    SELECT "applicationId", "scheduledAt"
+    FROM public."Interview"
+    WHERE "status" = 'SCHEDULED'
+    GROUP BY "applicationId", "scheduledAt"
+    HAVING count(*) > 1
+) AS conflicts;
+```
+
+Proceed only when the count is zero and the migration has been approved for
+that database. The migration rechecks under a table lock and aborts on a
+conflict without modifying interview records.
+
+## PostgreSQL regression tests
+
+Apply the migrations to a disposable PostgreSQL database on `127.0.0.1`
+with a name starting with `srms_test_`. Set `SRMS_TEST_DATABASE_URL` to that
+database and run `npm run test:postgres` from `backend`. The suite creates
+synthetic fixtures and accepts only a loopback database with that name prefix.
