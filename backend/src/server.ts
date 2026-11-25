@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 5000;
 // 1. Cấu hình các Middleware xử lý dữ liệu đầu vào (Luôn ở trên cùng)
 app.use(cors({
   origin: '*', // Sau này deploy sẽ đổi thành link Frontend thật
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json()); // Khai báo phân tích dữ liệu dạng JSON
@@ -81,7 +81,7 @@ app.get('/api/v1/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'OK', message: 'Backend is running' });
 });
 
-app.listen(PORT, () => {
+export const server = app.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
   console.log(`📑 Giao diện API Docs hiển thị tại: http://localhost:${PORT}/api/v1/docs`);
 });

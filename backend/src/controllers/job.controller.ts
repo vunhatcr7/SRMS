@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import prisma from '../config/db';
 import { parseSalaryRangeUpdate, validateSalaryRange } from '../utils/salary-range';
 
+const MAX_JOB_FIELD_LENGTH = 5000;
+
 const getJobId = (req: Request): string => Array.isArray(req.params.jobId) ? req.params.jobId[0].trim() : req.params.jobId?.trim() || '';
 const canManageJob = (requesterId: string, requesterRole: string, recruiterId: string) => requesterRole === 'ADMIN' || requesterId === recruiterId;
 
@@ -48,7 +50,7 @@ export const createJob = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if ([title, description, requirements, location, companyName].some((value) => value.length > 5000)) {
+    if ([title, description, requirements, location, companyName].some((value) => value.length > MAX_JOB_FIELD_LENGTH)) {
       res.status(400).json({ message: 'Nội dung tin tuyển dụng vượt quá độ dài cho phép.' });
       return;
     }
@@ -163,6 +165,10 @@ export const updateManagedJob = async (req: Request, res: Response): Promise<voi
     }
     if (!title || !description || !requirements || !location) {
       res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin công việc.' });
+      return;
+    }
+    if (title.length > MAX_JOB_FIELD_LENGTH) {
+      res.status(400).json({ message: 'The job posting exceeds the allowed length.' });
       return;
     }
     if (typeof benefits === 'string' && benefits.length > 5000) {
