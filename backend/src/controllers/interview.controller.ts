@@ -12,13 +12,41 @@ const MAX_LOCATION_LENGTH = 2000;
 const MAX_INTERVIEWER_NAME_LENGTH = 200;
 const MAX_NOTES_LENGTH = 5000;
 
+const ISO_SCHEDULE_PATTERN = /^(\d{4}-\d{2}-\d{2})(?:[T ](?:[01]\d|2[0-3]):\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/i;
+const MEETING_URL_PATTERN = /^https?:\/\/[^/\s?#\\]+[^\s\\]*$/i;
+
 const parseScheduledAt = (value: unknown): Date | null => {
-  if (typeof value !== 'string' || !value.trim()) {
+  if (typeof value !== 'string') {
     return null;
   }
 
-  const date = new Date(value);
+  const timestamp = value.trim();
+  const datePart = ISO_SCHEDULE_PATTERN.exec(timestamp)?.[1];
+  if (!datePart) {
+    return null;
+  }
+
+  // Date parsing can silently roll impossible dates, such as February 30, into the next month.
+  const calendarDate = new Date(datePart);
+  if (Number.isNaN(calendarDate.getTime()) || calendarDate.toISOString().slice(0, 10) !== datePart) {
+    return null;
+  }
+
+  const date = new Date(timestamp);
   return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const validateInterviewLocation = (locationOrLink: string, type: string): string | null => {
+  if (!locationOrLink || locationOrLink.length > MAX_LOCATION_LENGTH) {
+    return 'Invalid interview location or link.';
+  }
+  if (type === 'ONLINE' && (!MEETING_URL_PATTERN.test(locationOrLink) || !URL.canParse(locationOrLink))) {
+    return 'Enter a valid HTTP or HTTPS meeting URL for an online interview.';
+  }
+  if (type === 'OFFLINE' && /^[a-z][a-z\d+.-]*:\/\/\S+$/i.test(locationOrLink)) {
+    return 'Enter a physical location for an offline interview.';
+  }
+  return null;
 };
 
 const findScheduledConflict = async (
@@ -81,7 +109,12 @@ export const createInterview = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    if (safeLocationOrLink.length > MAX_LOCATION_LENGTH || safeInterviewerName.length > MAX_INTERVIEWER_NAME_LENGTH) {
+    if (scheduledDate.getTime() < Date.now()) {
+      res.status(400).json({ message: 'Interview time cannot be in the past.' });
+      return;
+    }
+
+    if (safeInterviewerName.length > MAX_INTERVIEWER_NAME_LENGTH) {
       res.status(400).json({ message: 'Dia diem/link hoac ten nguoi phong van vuot qua do dai cho phep.' });
       return;
     }
@@ -91,6 +124,12 @@ export const createInterview = async (req: Request, res: Response): Promise<void
       : typeof body.type === 'string' ? body.type.trim().toUpperCase() : '';
     if (!VALID_INTERVIEW_TYPES.includes(safeType)) {
       res.status(400).json({ message: `type khong hop le. Chi chap nhan: ${VALID_INTERVIEW_TYPES.join(', ')}` });
+      return;
+    }
+
+    const locationError = validateInterviewLocation(safeLocationOrLink, safeType);
+    if (locationError) {
+      res.status(400).json({ message: locationError });
       return;
     }
 
@@ -367,11 +406,6 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    if (body.locationOrLink !== undefined && (typeof body.locationOrLink !== 'string' || !body.locationOrLink.trim() || body.locationOrLink.trim().length > MAX_LOCATION_LENGTH)) {
-      res.status(400).json({ message: 'locationOrLink khong hop le.' });
-      return;
-    }
-
     if (body.interviewerName !== undefined && (typeof body.interviewerName !== 'string' || !body.interviewerName.trim() || body.interviewerName.trim().length > MAX_INTERVIEWER_NAME_LENGTH)) {
       res.status(400).json({ message: 'interviewerName khong hop le.' });
       return;
@@ -399,6 +433,18 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
       normalizedType = candidateType;
     }
 
+    const locationOrLink = body.locationOrLink === undefined
+      ? undefined
+      : typeof body.locationOrLink === 'string' ? body.locationOrLink.trim() : '';
+    if (normalizedType !== undefined || locationOrLink !== undefined) {
+      const resultingType = normalizedType ?? (interview.type?.toUpperCase() || 'ONLINE');
+      const locationError = validateInterviewLocation(locationOrLink ?? interview.locationOrLink.trim(), resultingType);
+      if (locationError) {
+        res.status(400).json({ message: locationError });
+        return;
+      }
+    }
+
     let normalizedNotes: string | null | undefined;
     if (body.notes !== undefined) {
       if (body.notes !== null && typeof body.notes !== 'string') {
@@ -420,6 +466,16 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
 
     if (
       resultingStatus === 'SCHEDULED'
+      && scheduledDate
+      && scheduledDate.getTime() !== interview.scheduledAt.getTime()
+      && scheduledDate.getTime() < Date.now()
+    ) {
+      res.status(400).json({ message: 'Interview time cannot be in the past.' });
+      return;
+    }
+
+    if (
+      resultingStatus === 'SCHEDULED'
       && (scheduledDate !== undefined || normalizedStatus === 'SCHEDULED')
       && await findScheduledConflict(
         interview.applicationId,
@@ -435,7 +491,7 @@ export const updateInterview = async (req: Request, res: Response): Promise<void
       where: { id: interviewId },
       data: {
         scheduledAt: scheduledDate ?? undefined,
-        locationOrLink: body.locationOrLink !== undefined ? body.locationOrLink.trim() : undefined,
+        locationOrLink,
         interviewerName: body.interviewerName !== undefined ? body.interviewerName.trim() : undefined,
         status: normalizedStatus,
         type: normalizedType,

@@ -40,7 +40,7 @@ export const getDashboardSummary = async (req: Request, res: Response): Promise<
       prisma.job.count({ where: { ...jobWhere, isActive: true } }),
       prisma.application.count({ where: applicationWhere }),
       prisma.application.count({ where: { ...applicationWhere, stage: { in: ['APPLIED', 'SCREENING', 'INTERVIEW'] } } }),
-      prisma.interview.count({ where: userRole === 'RECRUITER' ? { application: { job: { recruiterId: userId } } } : userRole === 'CANDIDATE' ? { application: { candidateProfile: { userId } } } : {} }),
+      prisma.interview.count({ where: { status: 'SCHEDULED', application: applicationWhere } }),
       prisma.application.count({ where: { ...applicationWhere, stage: 'HIRED' } }),
       prisma.application.groupBy({
         by: ['stage'],
