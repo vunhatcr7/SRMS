@@ -117,3 +117,6 @@ WHERE status IS NULL;
 Have the database owner review the results and test a separate,
 data-preserving correction on a disposable copy. After approved schema
 corrections, repeat the schema and history checks before baselining.
+
+The [Supabase alignment runbook](operations/SUPABASE_ALIGNMENT.md) covers the
+approved repair, backup verification and rollback for these two differences.
